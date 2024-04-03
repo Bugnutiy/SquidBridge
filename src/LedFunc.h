@@ -41,7 +41,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
     led.fill(color);
     led.setBrightness(Br_min);
     BR = Br_min;
-
+    led.show();
     break;
   }
   case 1:
@@ -162,6 +162,7 @@ bool blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
     led.fill(color);
     led.setBrightness(Br_min);
     BR = Br_min;
+    led.show();
     break;
   }
   case 1:
@@ -319,4 +320,3 @@ void SHOW_NUM_R(R_INIT &led, uint8_t &number, mData color1, mData color2 = mBlac
   }
   led.show();
 }
-
