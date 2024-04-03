@@ -1,7 +1,7 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-#define MY_DEBUG
-#include "Debug.h"
+// #define MY_DEBUG
+#include "My_Debug.h"
 
 #define RECEIVER_PIN 11
 #define SENDER_PIN 12
@@ -27,7 +27,7 @@
 #define COLOR_DEBTH 3
 
 #include <microLED.h>
-#include <math.h>
+// #include <math.h>
 #include "Timer.h"
 #include <IRremote.hpp>
 #include "LedFunc.h"
@@ -49,8 +49,8 @@ bool pattern = 0;
 void setup()
 {
 #ifdef MY_DEBUG
-#endif
   Serial.begin(115200);
+#endif
 
   l_led.setBrightness(BRIGHTNESS_MAX);
   r_led.setBrightness(BRIGHTNESS_MAX);
@@ -68,39 +68,34 @@ void setup()
 // int kkk;
 void loop()
 {
-  // DD(millis(),500);
-
-  if (IrReceiver.decode())
-  {
-    // IrReceiver.decodedIRData.protocol;
-    Serial.println(IrReceiver.decodedIRData.command);
-    Serial.println(IrReceiver.decodedIRData.address);
-    Serial.println("---------------------------------");
-    if (IrReceiver.decodedIRData.command == 69 && IrReceiver.decodedIRData.address == 0)
+  TMR16_S(1000, {
+    if (IrReceiver.decode())
     {
-      IrSender.sendNEC(4, 8, 3);
+      DD(IrReceiver.decodedIRData.protocol);
+      DD(IrReceiver.decodedIRData.address);
+      DD(IrReceiver.decodedIRData.command);
+      if (IrReceiver.decodedIRData.command == 69 && IrReceiver.decodedIRData.address == 0)
+      {
+        IrSender.sendNEC(4, 8, 3);
+      }
+      IrReceiver.resume();
     }
-    IrReceiver.resume();
-  }
+  });
+  // if (IrReceiver.decode())
+  // {
+  //   // IrReceiver.decodedIRData.protocol;
+  //   DD(IrReceiver.decodedIRData.command);
+  //   DD(IrReceiver.decodedIRData.address);
+  //   DD("---------------------------------");
+  //   if (IrReceiver.decodedIRData.command == 69 && IrReceiver.decodedIRData.address == 0)
+  //   {
+  //     IrSender.sendNEC(4, 8, 3);
+  //   }
+  //   IrReceiver.resume();
+  // }
 
   blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);
   blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);
-  // l_led.fill(mAqua);
-  // r_led.fill(mAqua);
-
-  // TMR16(2, {
-  //   static uint8_t BR = 0;
-  //   static int8_t dir = 1;
-  //   l_led.setBrightness(BR);
-  //   l_led.show();
-  //   r_led.setBrightness(BR);
-  //   r_led.show();
-  //   BR = BR + dir;
-  //   if (BR == 255)
-  //     dir = -1;
-  //   if (BR == 0)
-  //     dir = 1;
-  // });
 
   if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
   {
@@ -162,5 +157,3 @@ void right_vibr()
 #endif
   timer_r_vibr = millis();
 }
-
-

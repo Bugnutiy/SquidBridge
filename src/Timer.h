@@ -1,35 +1,51 @@
 #pragma once
 /**
- * @brief вместо T время, вместо X код
+ * @brief вместо T время, вместо CODE код
  */
-#define TMR32(T, X) \
-    ({static uint32_t tmr##T = 0;                 \
+#define TMR32(T, CODE) \
+  ({static uint32_t tmr##T = 0;                 \
     if ((uint32_t)(millis() - tmr##T) >= T) \
     {                                       \
       tmr##T = millis();                    \
-      X                                     \
+      CODE                                     \
     } })
 
-#define TMR16(T, X) \
-    ({static uint16_t tmr##T = 0;                 \
+#define TMR16(T, CODE) \
+  ({static uint16_t tmr##T = 0;                 \
     if ((uint16_t)(millis() - tmr##T) >= T) \
     {                                       \
       tmr##T = millis();                    \
-      X                                     \
+      CODE                                     \
     } })
 
-#define TMR32_S(T, X) \
-    ({static uint32_t tmr##T = 0;                 \
+#define TMR8(T, CODE) \
+  ({static uint8_t tmr##T = 0;                 \
+    if ((uint8_t)(millis() - tmr##T) >= T) \
+    {                                       \
+      tmr##T = millis();                    \
+      CODE                                     \
+    } })
+
+#define TMR32_S(T, CODE) \
+  ({static uint32_t tmr##T = 0;                 \
     if ((uint32_t)(millis() - tmr##T) >= T) \
     {                                       \
       tmr##T += T;                    \
-      X                                     \
+      CODE                                     \
     } })
 
-#define TMR16_S(T, X) \
-    ({static uint16_t tmr##T = 0;                 \
+#define TMR16_S(T, CODE) \
+  ({static uint16_t tmr##T = 0;                 \
     if ((uint16_t)(millis() - tmr##T) >= T) \
     {                                       \
       tmr##T +=T;                    \
-      X                                     \
+      CODE                                     \
+    } })
+
+#define TMR8_S(T, CODE) \
+  ({static uint8_t tmr##T = 0;                 \
+    if ((uint8_t)(millis() - tmr##T) >= T) \
+    {                                       \
+      tmr##T +=T;                    \
+      CODE                                     \
     } })
