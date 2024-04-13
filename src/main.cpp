@@ -30,7 +30,6 @@
 // #include <math.h>
 #include "Timer.h"
 #include <IRremote.hpp>
-#include "LedFunc.h"
 
 microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> l_led;
 microLED<NUMLEDS, RIGHT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> r_led;
@@ -45,7 +44,8 @@ timer_type timer_r_vibr = 0;
 void right_vibr();
 
 bool pattern = 0;
-
+#include "LedFunc.h"
+#include "TransmitterFunc.h"
 void setup()
 {
 #ifdef MY_DEBUG
@@ -68,31 +68,13 @@ void setup()
 // int kkk;
 void loop()
 {
-  TMR16_S(1000, {
-    if (IrReceiver.decode())
-    {
-      DD(IrReceiver.decodedIRData.protocol);
-      DD(IrReceiver.decodedIRData.address);
-      DD(IrReceiver.decodedIRData.command);
-      if (IrReceiver.decodedIRData.command == 69 && IrReceiver.decodedIRData.address == 0)
-      {
-        IrSender.sendNEC(4, 8, 3);
-      }
-      IrReceiver.resume();
-    }
-  });
-  // if (IrReceiver.decode())
-  // {
-  //   // IrReceiver.decodedIRData.protocol;
-  //   DD(IrReceiver.decodedIRData.command);
-  //   DD(IrReceiver.decodedIRData.address);
-  //   DD("---------------------------------");
-  //   if (IrReceiver.decodedIRData.command == 69 && IrReceiver.decodedIRData.address == 0)
-  //   {
-  //     IrSender.sendNEC(4, 8, 3);
-  //   }
-  //   IrReceiver.resume();
-  // }
+  SendData();
+  if (IrReceiver.decode())
+  {
+    SendTimer = millis();
+   
+    IrReceiver.resume();
+  }
 
   blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);
   blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);

@@ -4,7 +4,7 @@
 #include <ArduinoQueue.h>
 #include <microLED.h>
 // #define MY_DEBUG
-#include "Debug.h"
+#include "My_Debug.h"
 #define L_INIT microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS>
 #define R_INIT microLED<NUMLEDS, RIGHT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS>
 /// @brief
