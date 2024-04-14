@@ -1,6 +1,6 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-// #define MY_DEBUG
+#define MY_DEBUG
 #include "My_Debug.h"
 
 #define RECEIVER_PIN 11
@@ -63,7 +63,6 @@ void setup()
   randomSeed(analogRead(A0));
   IrReceiver.begin(RECEIVER_PIN);
   IrSender.begin(SENDER_PIN);
-  DD(sizeof(SendDataQueue));
 }
 
 // int kkk;
