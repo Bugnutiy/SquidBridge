@@ -63,6 +63,7 @@ void setup()
   randomSeed(analogRead(A0));
   IrReceiver.begin(RECEIVER_PIN);
   IrSender.begin(SENDER_PIN);
+  DD(sizeof(SendDataQueue));
 }
 
 // int kkk;
@@ -72,7 +73,7 @@ void loop()
   if (IrReceiver.decode())
   {
     SendTimer = millis();
-   
+
     IrReceiver.resume();
   }
 
