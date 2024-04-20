@@ -16,13 +16,13 @@
 #define VIBRATOR_RIGHT 1 // 1=3
 #define VIBRATOR_RIGHT_PIN 3
 
-#define VIBRATOR_LEFT_SENS 10  // сколько раз должен сработать вибратор, чтобы тригернуть систему
-#define VIBRATOR_RIGHT_SENS 10 // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_LEFT_SENS 0  // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_RIGHT_SENS 0 // сколько раз должен сработать вибратор, чтобы тригернуть систему
 
 #define NUMLEDS 15 // кол-во светодиодов
 
 #define timer_type uint16_t
-#define timer_vibro_reset 200 // как часто сбрасывать счётчик вибрации
+#define timer_vibro_reset 300 // как часто сбрасывать счётчик вибрации
 
 #define COLOR_DEBTH 3
 
@@ -72,12 +72,12 @@ void loop()
   if (IrReceiver.decode())
   {
     SendTimer = millis();
-   
+
     IrReceiver.resume();
   }
 
-  blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);
-  blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1);
+  blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 0);
+  blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 0);
 
   if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
   {
@@ -92,7 +92,7 @@ void loop()
 
   if (l_vib > VIBRATOR_LEFT_SENS)
   {
-    while (blinkL(l_led, pattern ? mRed : mGreen, 1, 500, 1000, 500))
+    while (blinkL(l_led, pattern ? mRed : mGreen, 3, 100, 500, 100, 0, 255, 30, 1))
     {
 #ifdef MY_DEBUG_LED
       static uint16_t DBTime = 0;
@@ -107,7 +107,7 @@ void loop()
   }
   if (r_vib > VIBRATOR_RIGHT_SENS)
   {
-    while (blinkR(r_led, pattern ? mGreen : mRed, 1, 500, 1000, 500))
+    while (blinkR(r_led, pattern ? mGreen : mRed, 3, 100, 500, 100, 0, 255, 30, 1))
     {
 #ifdef MY_DEBUG_LED
       static uint16_t DBTime = 0;
