@@ -74,8 +74,6 @@ void loop()
   if (IrReceiver.decode())
   {
     SendTimer = millis();
-    DD(IrReceiver.decodedIRData.address);
-    DD(IrReceiver.decodedIRData.command);
     IrData received = IrData{IrReceiver.decodedIRData.address, IrReceiver.decodedIRData.command};
     DDD("{");
     DDD(received.address);
