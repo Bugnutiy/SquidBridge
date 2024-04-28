@@ -11,6 +11,11 @@ struct IrData
 {
     uint16_t address;
     uint8_t command;
+
+    bool operator==(const IrData& other) const
+    {
+        return address == other.address && command == other.command;
+    }
 };
 #pragma pack(pop)
 

@@ -3,6 +3,7 @@
 #define MY_DEBUG
 #include "My_Debug.h"
 
+// #define DEBUG 1
 #define RECEIVER_PIN 11
 #define SENDER_PIN 12
 
@@ -29,6 +30,7 @@
 #include <microLED.h>
 // #include <math.h>
 #include "Timer.h"
+#include "RemoteCommands.h"
 #include <IRremote.hpp>
 
 microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> l_led;
@@ -72,7 +74,14 @@ void loop()
   if (IrReceiver.decode())
   {
     SendTimer = millis();
+    IrData received = IrData{IrReceiver.decodedIRData.address, IrReceiver.decodedIRData.command};
+    DDD("{");
+    DDD(received.address);
+    DDD(", ");
+    DDD(received.command);
+    DD("}");
 
+    // DD(RemoteCommand.btn_CH_minus.address);
     IrReceiver.resume();
   }
 

@@ -2,41 +2,47 @@
 #include <Arduino.h>
 // #define MY_DEBUG
 
-
-
 #ifdef MY_DEBUG
 
 #define DD_1(X) Serial.println(X)
 #define DDD_1(X) Serial.print(X)
-#define DD_2(X, T) \
-  ({static uint16_t TMR##T;               \
-  if ((uint16_t)(millis() - TMR##T) >= T) \
-  {                                       \
-    TMR##T = millis();                    \
-    Serial.println(X);                    \
-  } })
-#define DDD_2(X, T) \
-  ({static uint16_t TMR##T;               \
-  if ((uint16_t)(millis() - TMR##T) >= T) \
-  {                                       \
-    TMR##T = millis();                    \
-    Serial.print(X);                   \
-  } })
+#define DD_2(X, T)                          \
+  {                                         \
+    static uint16_t TMR##T;                 \
+    if ((uint16_t)(millis() - TMR##T) >= T) \
+    {                                       \
+      TMR##T = millis();                    \
+      Serial.println(X);                    \
+    }                                       \
+  }
+#define DDD_2(X, T)                         \
+  {                                         \
+    static uint16_t TMR##T;                 \
+    if ((uint16_t)(millis() - TMR##T) >= T) \
+    {                                       \
+      TMR##T = millis();                    \
+      Serial.print(X);                      \
+    }                                       \
+  }
 
-#define DD_3(X, Y, T) \
-  ({static uint16_t TMR##T;                 \
-  if ((uint16_t)(millis() - TMR##T) >= T) \
-  {                                       \
-    TMR##T = millis();                    \
-    Serial.println(X, Y);                 \
-  } })
-#define DDD_3(X, Y, T) \
-  ({static uint16_t TMR##T;                 \
-  if ((uint16_t)(millis() - TMR##T) >= T) \
-  {                                       \
-    TMR##T = millis();                    \
-    Serial.print(X, Y);                   \
-  } })
+#define DD_3(X, Y, T)                       \
+  {                                         \
+    static uint16_t TMR##T;                 \
+    if ((uint16_t)(millis() - TMR##T) >= T) \
+    {                                       \
+      TMR##T = millis();                    \
+      Serial.println(X, Y);                 \
+    }                                       \
+  }
+#define DDD_3(X, Y, T)                      \
+  {                                         \
+    static uint16_t TMR##T;                 \
+    if ((uint16_t)(millis() - TMR##T) >= T) \
+    {                                       \
+      TMR##T = millis();                    \
+      Serial.print(X, Y);                   \
+    }                                       \
+  }
 
 #define DD_SELECT(_1, _2, _3, macro, ...) macro
 
