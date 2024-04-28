@@ -16,13 +16,13 @@
 #define VIBRATOR_RIGHT 1 // 1=3
 #define VIBRATOR_RIGHT_PIN 3
 
-#define VIBRATOR_LEFT_SENS 10  // сколько раз должен сработать вибратор, чтобы тригернуть систему
-#define VIBRATOR_RIGHT_SENS 10 // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_LEFT_SENS 0  // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_RIGHT_SENS 0 // сколько раз должен сработать вибратор, чтобы тригернуть систему
 
 #define NUMLEDS 15 // кол-во светодиодов
 
 #define timer_type uint16_t
-#define timer_vibro_reset 200 // как часто сбрасывать счётчик вибрации
+#define timer_vibro_reset 300 // как часто сбрасывать счётчик вибрации
 
 #define COLOR_DEBTH 3
 
@@ -72,6 +72,8 @@ void loop()
   if (IrReceiver.decode())
   {
     SendTimer = millis();
+    DD(IrReceiver.decodedIRData.address);
+    DD(IrReceiver.decodedIRData.command);
 
     IrReceiver.resume();
   }
