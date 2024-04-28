@@ -7,6 +7,7 @@
 #define SEND_DELAY 20
 
 #pragma pack(push, 1)
+
 struct IrData
 {
     uint16_t address;
