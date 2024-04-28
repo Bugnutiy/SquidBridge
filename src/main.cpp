@@ -67,27 +67,58 @@ void setup()
   IrSender.begin(SENDER_PIN);
 }
 
-// int kkk;
 void loop()
 {
   SendData();
   if (IrReceiver.decode())
   {
     SendTimer = millis();
-    IrData received = IrData{IrReceiver.decodedIRData.address, IrReceiver.decodedIRData.command};
+    IrData received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
     DDD("{");
     DDD(received.address);
     DDD(", ");
     DDD(received.command);
     DD("}");
 
-   
+    if (received.address == CARMP3.btn_0.address && received.command == CARMP3.btn_0.command)
+    {
+      IrSender.sendNEC(LGM.btn_0.address, LGM.btn_0.command, 1);
+    }
+    if (received.address == CARMP3.btn_1.address && received.command == CARMP3.btn_1.command)
+    {
+      IrSender.sendNEC(LGM.btn_1.address, LGM.btn_1.command, 1);
+    }
+    if (received.address == CARMP3.btn_2.address && received.command == CARMP3.btn_2.command){
+      IrSender.sendNEC(LGM.btn_2.address, LGM.btn_2.command, 1);
+    }
+    if (received.address == CARMP3.btn_3.address && received.command == CARMP3.btn_3.command){
+      IrSender.sendNEC(LGM.btn_3.address, LGM.btn_3.command, 1);
+    }
+    if (received.address == CARMP3.btn_4.address && received.command == CARMP3.btn_4.command){
+      IrSender.sendNEC(LGM.btn_4.address, LGM.btn_4.command, 1);
+    }
+    if (received.address == CARMP3.btn_5.address && received.command == CARMP3.btn_5.command){
+      IrSender.sendNEC(LGM.btn_5.address, LGM.btn_5.command, 1);
+    }
+    if (received.address == CARMP3.btn_6.address && received.command == CARMP3.btn_6.command){
+      IrSender.sendNEC(LGM.btn_6.address, LGM.btn_6.command, 1);
+    }
+    if (received.address == CARMP3.btn_7.address && received.command == CARMP3.btn_7.command){
+      IrSender.sendNEC(LGM.btn_7.address, LGM.btn_7.command, 1);
+    }
+    if (received.address == CARMP3.btn_8.address && received.command == CARMP3.btn_8.command){
+      IrSender.sendNEC(LGM.btn_8.address, LGM.btn_8.command, 1);
+    }
+    if (received.address == CARMP3.btn_9.address && received.command == CARMP3.btn_9.command){
+      IrSender.sendNEC(LGM.btn_9.address, LGM.btn_9.command, 1);
+    }
+    // IrSender.sendNEC(255, 255, 3);
     // DD(RemoteCommand.btn_CH_minus.address);
     IrReceiver.resume();
   }
 
-  blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 0);
-  blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 0);
+  blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 1);
+  blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 1);
 
   if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
   {
