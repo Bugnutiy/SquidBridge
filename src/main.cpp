@@ -17,13 +17,13 @@
 #define VIBRATOR_RIGHT 1 // 1=3
 #define VIBRATOR_RIGHT_PIN 3
 
-#define VIBRATOR_LEFT_SENS 0  // сколько раз должен сработать вибратор, чтобы тригернуть систему
-#define VIBRATOR_RIGHT_SENS 0 // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_LEFT_SENS 20  // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_RIGHT_SENS 20 // сколько раз должен сработать вибратор, чтобы тригернуть систему
 
 #define NUMLEDS 15 // кол-во светодиодов
 
 #define timer_type uint16_t
-#define timer_vibro_reset 300 // как часто сбрасывать счётчик вибрации
+#define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
 #define COLOR_DEBTH 3
 
@@ -83,10 +83,14 @@ void loop()
     if (received == CARMP3.btn_CH_minus) // сброс шаблона
     {
       pattern = random(2);
+      DD("Pattern changed");
       static bool flag = 1;
+      static bool flagL = 1, flagR = 1;
+      flag = 1;
+      flagL = 1;
+      flagR = 1;
       while (flag)
       {
-        static bool flagL = 1, flagR = 1;
 
         if (flagL && !blinkL(l_led, mPurple, 3, 100, 200, 100, 50, 255, 1, 1))
         {
@@ -102,6 +106,7 @@ void loop()
         }
       }
     }
+
     IrReceiver.resume();
   }
 
