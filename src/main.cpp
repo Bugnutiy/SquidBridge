@@ -1,6 +1,6 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-#define MY_DEBUG
+// #define MY_DEBUG
 #include "My_Debug.h"
 
 // #define DEBUG 1
