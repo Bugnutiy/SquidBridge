@@ -80,40 +80,28 @@ void loop()
     DDD(received.command);
     DD("}");
 
-    if (received.address == CARMP3.btn_0.address && received.command == CARMP3.btn_0.command)
+    if (received == CARMP3.btn_CH_minus) // сброс шаблона
     {
-      IrSender.sendNEC(LGM.btn_0.address, LGM.btn_0.command, 1);
+      pattern = random(2);
+      static bool flag = 1;
+      while (flag)
+      {
+        static bool flagL = 1, flagR = 1;
+
+        if (flagL && !blinkL(l_led, mPurple, 3, 100, 200, 100, 50, 255, 1, 1))
+        {
+          flagL = 0;
+        }
+        if (flagR && !blinkR(r_led, mPurple, 3, 100, 200, 100, 50, 255, 1, 1))
+        {
+          flagR = 0;
+        }
+        if (!flagL && !flagR)
+        {
+          flag = 0;
+        }
+      }
     }
-    if (received.address == CARMP3.btn_1.address && received.command == CARMP3.btn_1.command)
-    {
-      IrSender.sendNEC(LGM.btn_1.address, LGM.btn_1.command, 1);
-    }
-    if (received.address == CARMP3.btn_2.address && received.command == CARMP3.btn_2.command){
-      IrSender.sendNEC(LGM.btn_2.address, LGM.btn_2.command, 1);
-    }
-    if (received.address == CARMP3.btn_3.address && received.command == CARMP3.btn_3.command){
-      IrSender.sendNEC(LGM.btn_3.address, LGM.btn_3.command, 1);
-    }
-    if (received.address == CARMP3.btn_4.address && received.command == CARMP3.btn_4.command){
-      IrSender.sendNEC(LGM.btn_4.address, LGM.btn_4.command, 1);
-    }
-    if (received.address == CARMP3.btn_5.address && received.command == CARMP3.btn_5.command){
-      IrSender.sendNEC(LGM.btn_5.address, LGM.btn_5.command, 1);
-    }
-    if (received.address == CARMP3.btn_6.address && received.command == CARMP3.btn_6.command){
-      IrSender.sendNEC(LGM.btn_6.address, LGM.btn_6.command, 1);
-    }
-    if (received.address == CARMP3.btn_7.address && received.command == CARMP3.btn_7.command){
-      IrSender.sendNEC(LGM.btn_7.address, LGM.btn_7.command, 1);
-    }
-    if (received.address == CARMP3.btn_8.address && received.command == CARMP3.btn_8.command){
-      IrSender.sendNEC(LGM.btn_8.address, LGM.btn_8.command, 1);
-    }
-    if (received.address == CARMP3.btn_9.address && received.command == CARMP3.btn_9.command){
-      IrSender.sendNEC(LGM.btn_9.address, LGM.btn_9.command, 1);
-    }
-    // IrSender.sendNEC(255, 255, 3);
-    // DD(RemoteCommand.btn_CH_minus.address);
     IrReceiver.resume();
   }
 
