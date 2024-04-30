@@ -14,14 +14,15 @@
 /// @param T1 Тайминг fade-in
 /// @param T2 Тайминг полной яркости
 /// @param T3 Тайминг fade-out
+/// @param T4 Тайминг низкой яркости
 /// @param Br_min Минимальная яркость (можно не тухнуть полностью)
 /// @param Br_max Максимальная яркость
 /// @param dekay Задердка исполнения (Больше -> Меньше FPS)
 /// @param Show Обновлять автоматически?
 /// @return Идёт выполнение
-bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
+bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
 {
-  static uint16_t TT1 = 0, TT2 = 0, TT3 = 0;
+  static uint16_t TT1 = 0, TT2 = 0, TT3 = 0, TT4 = 0;
   static uint8_t worker = 0, i = 0;
   static int32_t BR = 0;
   static mData prev_color = mBlack;
@@ -33,7 +34,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
 
   switch (worker)
   {
-  case 0:
+  case 0: // инициализация минимальной яркости
   {
     worker = 1;
     i = 0;
@@ -45,7 +46,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
       led.show();
     break;
   }
-  case 1:
+  case 1: // fade-in
   {
     uint8_t dekay1 = dekay;
     uint16_t BT = (Br_max - Br_min) / T1 * dekay1;
@@ -74,7 +75,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
 
     break;
   }
-  case 2:
+  case 2: // полная яркость
   {
     if (T2)
       if ((uint16_t)(millis() - TT2) >= T2)
@@ -85,7 +86,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
       }
     break;
   }
-  case 3:
+  case 3: // fade-out
   {
     uint8_t dekay3 = dekay;
     uint16_t BT = (Br_max - Br_min) / T3 * dekay3;
@@ -118,6 +119,17 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
         worker = 0;
       // TT3 = millis();
     }
+    break;
+  }
+  case 4: //минимальная яркость
+  {
+    if (T4)
+      if ((uint16_t)(millis() - TT4) >= T4)
+      {
+        worker++;
+        TT1 = millis();
+        TT4 = millis()-1;
+      }
     break;
   }
   default:
@@ -252,6 +264,9 @@ bool blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
   return worker;
 }
 
+bool blinkSync(L_INIT &l_led, R_INIT &r_led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
+{
+}
 const uint8_t NUMB_L[][15] PROGMEM = {
     {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 00, 00, 00}, // 0
     {0, 2, 0, 0, 0, 0, 0, 8, 0, 00, 00, 00, 13, 14, 15}, // 1
