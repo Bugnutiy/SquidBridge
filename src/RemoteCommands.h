@@ -2,9 +2,8 @@
 #include "TransmitterFunc.h"
 #include <Arduino.h>
 
-class CAR_MP3_REMOTE
+namespace CARMP3
 {
-public:
     const IrData btn_CH_minus = IrData{0, 69};
     const IrData btn_CH = IrData{0, 70};
     const IrData btn_CH_plus = IrData{0, 71};
@@ -26,18 +25,14 @@ public:
     const IrData btn_9 = IrData{0, 74};
     const IrData btn_100 = IrData{0, 25};
     const IrData btn_200 = IrData{0, 13};
-};
-CAR_MP3_REMOTE CARMP3;
+}
 
-class STANDART_COMMANDS
+namespace STD_COMMANDS
 {
-public:
     const uint8_t INIT_COMMAND = 1;
     const uint8_t SYNC_COMMAND = 2;
     const uint8_t INIT_REQUEST = 3;
-
-};
-STANDART_COMMANDS STD_COMMANDS;
+}
 
 // class LGM
 // {
