@@ -80,6 +80,7 @@ void setup()
 }
 
 uint8_t workerMain = 0;
+uint32_t sync_time = 0;
 void loop()
 {
   switch (workerMain)
@@ -108,7 +109,7 @@ void loop()
       {
         SendTimer = millis();
         received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-        if (received.address == device_id || received.address == 0)
+        if (received.address == device_id)
         {
           IrReceiver.resume();
         }
@@ -119,7 +120,7 @@ void loop()
         DDD(received.command);
         DD("}");
 
-        if (received.command == STD_COMMANDS::INIT_COMMAND)
+        if (received.command == STD_COMMANDS::INIT_COMMAND || received.command == STD_COMMANDS::SYNC_COMMAND)
         {
           DD("INIT_RECIEVED");
           flag = 0;
@@ -260,9 +261,16 @@ void loop()
       {
       case STD_COMMANDS::SYNC_COMMAND:
       {
+        if (received.address == device_id - 1)
+          sync_time = millis();
+        break;
       }
-      break;
-
+      case STD_COMMANDS::INIT_REQUEST:
+      {
+        if (received.address != device_id)
+          SendDataQueue.push_front(IrData{device_id, STD_COMMANDS::INIT_COMMAND});
+        break;
+      }
       default:
         break;
       }
