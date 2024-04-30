@@ -1,6 +1,6 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-// #define MY_DEBUG
+#define MY_DEBUG
 #include "My_Debug.h"
 
 // #define DEBUG 1
@@ -17,15 +17,15 @@
 #define VIBRATOR_RIGHT 1 // 1=3
 #define VIBRATOR_RIGHT_PIN 3
 
-#define VIBRATOR_LEFT_SENS 20  // сколько раз должен сработать вибратор, чтобы тригернуть систему
-#define VIBRATOR_RIGHT_SENS 20 // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_LEFT_SENS 40  // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_RIGHT_SENS 40 // сколько раз должен сработать вибратор, чтобы тригернуть систему
 
 #define NUMLEDS 15 // кол-во светодиодов
 
 #define timer_type uint16_t
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
-#define COLOR_DEBTH 3
+#define COLOR_DEBTH 1
 
 #include <microLED.h>
 // #include <math.h>
@@ -56,8 +56,12 @@ void setup()
 
   l_led.setBrightness(BRIGHTNESS_MAX);
   r_led.setBrightness(BRIGHTNESS_MAX);
-  randomSeed(analogRead(A0));
-  pattern = random(2);
+  unsigned long seed = 0;
+
+  seed = analogRead(A0);
+
+  randomSeed(seed);
+  pattern = random(2147483648) % 2;
   pinMode(VIBRATOR_LEFT_PIN, INPUT_PULLUP);
   pinMode(VIBRATOR_RIGHT_PIN, INPUT_PULLUP);
   attachInterrupt(VIBRATOR_LEFT, left_vibr, CHANGE);
@@ -65,6 +69,14 @@ void setup()
   randomSeed(analogRead(A0));
   IrReceiver.begin(RECEIVER_PIN);
   IrSender.begin(SENDER_PIN);
+  DDD("Pattern: ");
+  DD(pattern);
+  DDD("Seed: ");
+  DD(seed);
+  SHOW_NUM_L(l_led, seed / 10 % 10, mRed);
+  SHOW_NUM_R(r_led, seed % 10, mRed);
+
+  delay(2000);
 }
 
 void loop()
@@ -82,36 +94,41 @@ void loop()
 
     if (received == CARMP3.btn_CH_minus) // сброс шаблона
     {
-      pattern = random(2);
-      DD("Pattern changed");
-      static bool flag = 1;
-      static bool flagL = 1, flagR = 1;
-      flag = 1;
-      flagL = 1;
-      flagR = 1;
-      while (flag)
+      int a = analogRead(A0);
+      DDD("A0 = ");
+      DD(a);
+      pattern = random(2147483648) % 2;
+      DDD("Pattern changed: ");
+      DD(pattern);
+      static uint16_t k0 = 0, k1 = 0;
+      if (pattern)
       {
+        k1 += 1;
+      }
+      else
+      {
+        k0 += 1;
+      }
+      DDD("k0 = ");
+      DD(k0);
+      DDD("k1 = ");
+      DD(k1);
 
-        if (flagL && !blinkL(l_led, mPurple, 3, 100, 200, 100, 50, 255, 1, 1))
-        {
-          flagL = 0;
-        }
-        if (flagR && !blinkR(r_led, mPurple, 3, 100, 200, 100, 50, 255, 1, 1))
-        {
-          flagR = 0;
-        }
-        if (!flagL && !flagR)
-        {
-          flag = 0;
-        }
+      while (blinkSync(l_led, r_led, mPurple, 1, 100, 0, 100, 0, 0, 255, 1, 1))
+      {
       }
     }
 
     IrReceiver.resume();
   }
-
-  blinkL(l_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 1);
-  blinkR(r_led, mAqua, 1, 2000, 200, 1000, 100, 180, 1, 1);
+  static uint16_t t1 = random(200, 1000), t2 = random(200, 2000), t3 = random(200, 1000), t4 = random(5000, 10000);
+  if (!blinkSync(l_led, r_led, mAqua, 1, t1, t2, t3, t4, 50, 255, 1, 1))
+  {
+    t1 = random(200, 1000);
+    t2 = random(200, 2000);
+    t3 = random(200, 1000);
+    t4 = random(5000, 10000);
+  }
 
   if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
   {
@@ -126,8 +143,9 @@ void loop()
 
   if (l_vib > VIBRATOR_LEFT_SENS)
   {
-    while (blinkL(l_led, pattern ? mRed : mGreen, 3, 100, 500, 100, 0, 255, 30, 1))
+    while (blinkL(l_led, pattern ? mRed : mLime, 3, 100, 0, 100, 0, 0, 255, 1, 1))
     {
+      DD("LEFT_RED", 1000);
 #ifdef MY_DEBUG_LED
       static uint16_t DBTime = 0;
       if ((uint16_t)(millis() - DBTime) > 50)
@@ -141,8 +159,10 @@ void loop()
   }
   if (r_vib > VIBRATOR_RIGHT_SENS)
   {
-    while (blinkR(r_led, pattern ? mGreen : mRed, 3, 100, 500, 100, 0, 255, 30, 1))
+    while (blinkR(r_led, pattern ? mLime : mRed, 3, 100, 0, 100, 0, 0, 255, 1, 1))
     {
+      DD("RIGHT_RED", 1000);
+
 #ifdef MY_DEBUG_LED
       static uint16_t DBTime = 0;
       if ((uint16_t)(millis() - DBTime) > 50)
