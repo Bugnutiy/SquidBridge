@@ -29,29 +29,39 @@ public:
 };
 CAR_MP3_REMOTE CARMP3;
 
-class LG_REMOTE
+class STANDART_COMMANDS
 {
 public:
-    const IrData btn_CH_minus = IrData{0, 69};
-    const IrData btn_CH = IrData{0, 70};
-    const IrData btn_CH_plus = IrData{0, 71};
-    const IrData btn_PREV = IrData{0, 68};
-    const IrData btn_NEXT = IrData{0, 64};
-    const IrData btn_PLAY = IrData{0, 67};
-    const IrData btn_VOL_minus = IrData{0, 7};
-    const IrData btn_VOL_plus = IrData{0, 21};
-    const IrData btn_EQ = IrData{0, 9};
-    const IrData btn_0 = IrData{4, 16};
-    const IrData btn_1 = IrData{4, 17};
-    const IrData btn_2 = IrData{4, 18};
-    const IrData btn_3 = IrData{4, 19};
-    const IrData btn_4 = IrData{4, 20};
-    const IrData btn_5 = IrData{4, 21};
-    const IrData btn_6 = IrData{4, 22};
-    const IrData btn_7 = IrData{4, 23};
-    const IrData btn_8 = IrData{4, 24};
-    const IrData btn_9 = IrData{4, 25};
-    const IrData btn_100 = IrData{0, 25};
-    const IrData btn_200 = IrData{0, 13};
+    const uint8_t INIT_COMMAND = 1;
+    const uint8_t SYNC_COMMAND = 2;
+    const uint8_t INIT_REQUEST = 3;
+
 };
-LG_REMOTE LGM;
+STANDART_COMMANDS STD_COMMANDS;
+
+// class LGM
+// {
+// public:
+//     const IrData btn_CH_minus = IrData{0, 69};
+//     const IrData btn_CH = IrData{0, 70};
+//     const IrData btn_CH_plus = IrData{0, 71};
+//     const IrData btn_PREV = IrData{0, 68};
+//     const IrData btn_NEXT = IrData{0, 64};
+//     const IrData btn_PLAY = IrData{0, 67};
+//     const IrData btn_VOL_minus = IrData{0, 7};
+//     const IrData btn_VOL_plus = IrData{0, 21};
+//     const IrData btn_EQ = IrData{0, 9};
+//     const IrData btn_0 = IrData{4, 16};
+//     const IrData btn_1 = IrData{4, 17};
+//     const IrData btn_2 = IrData{4, 18};
+//     const IrData btn_3 = IrData{4, 19};
+//     const IrData btn_4 = IrData{4, 20};
+//     const IrData btn_5 = IrData{4, 21};
+//     const IrData btn_6 = IrData{4, 22};
+//     const IrData btn_7 = IrData{4, 23};
+//     const IrData btn_8 = IrData{4, 24};
+//     const IrData btn_9 = IrData{4, 25};
+//     const IrData btn_100 = IrData{0, 25};
+//     const IrData btn_200 = IrData{0, 13};
+// };
+// LGM LG_REMOTE;

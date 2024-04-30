@@ -17,8 +17,8 @@
 #define VIBRATOR_RIGHT 1 // 1=3
 #define VIBRATOR_RIGHT_PIN 3
 
-#define VIBRATOR_LEFT_SENS 40  // сколько раз должен сработать вибратор, чтобы тригернуть систему
-#define VIBRATOR_RIGHT_SENS 40 // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_LEFT_SENS 30  // сколько раз должен сработать вибратор, чтобы тригернуть систему
+#define VIBRATOR_RIGHT_SENS 30 // сколько раз должен сработать вибратор, чтобы тригернуть систему
 
 #define NUMLEDS 15 // кол-во светодиодов
 
@@ -32,6 +32,7 @@
 #include "Timer.h"
 #include "RemoteCommands.h"
 #include <IRremote.hpp>
+#include "Patterns.h"
 
 microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> l_led;
 microLED<NUMLEDS, RIGHT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> r_led;
@@ -48,6 +49,9 @@ void right_vibr();
 bool pattern = 0;
 #include "LedFunc.h"
 #include "TransmitterFunc.h"
+
+IrData received;
+uint8_t device_id = 0, devices_count = 1;
 void setup()
 {
 #ifdef MY_DEBUG
@@ -73,106 +77,237 @@ void setup()
   DD(pattern);
   DDD("Seed: ");
   DD(seed);
-  SHOW_NUM_L(l_led, seed / 10 % 10, mRed);
-  SHOW_NUM_R(r_led, seed % 10, mRed);
-
-  delay(2000);
 }
 
+uint8_t workerThread = 0;
 void loop()
 {
-  SendData();
-  if (IrReceiver.decode())
+  switch (workerThread)
   {
-    SendTimer = millis();
-    IrData received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-    DDD("{");
-    DDD(received.address);
-    DDD(", ");
-    DDD(received.command);
-    DD("}");
-
-    if (received == CARMP3.btn_CH_minus) // сброс шаблона
+  case 0:
+  {
+    static bool flag = 1;
+    static uint16_t InintTimer = millis();
+    DD("Waiting for initialization");
+    while (flag)
     {
-      int a = analogRead(A0);
-      DDD("A0 = ");
-      DD(a);
-      pattern = random(2147483648) % 2;
-      DDD("Pattern changed: ");
-      DD(pattern);
-      static uint16_t k0 = 0, k1 = 0;
-      if (pattern)
+      TMR16(500, {
+        static bool f1 = 0;
+        f1 = !f1;
+        r_led.fill(0, 2, f1 ? mRed : mBlack);
+        r_led.show();
+      });
+      if (millis() - SendTimer >= SEND_DELAY * 2)
       {
-        k1 += 1;
+        // IrReceiver.stop();
+        IrSender.sendNEC(device_id, STD_COMMANDS.INIT_REQUEST, 1);
+        // delay(SEND_DELAY);
+        // IrReceiver.begin(RECEIVER_PIN);
       }
-      else
+      if (IrReceiver.decode())
       {
-        k0 += 1;
+        SendTimer = millis();
+        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+        DDD("{");
+        DDD(received.address);
+        DDD(", ");
+        DDD(received.command);
+        DD("}");
+        if (received.command == STD_COMMANDS.INIT_COMMAND)
+        {
+          DD("INIT_RECIEVED");
+          flag = 0;
+          device_id = received.address + 1;
+          devices_count = device_id;
+        }
+        if (received == CARMP3.btn_1)
+        {
+          DD("INIT_RECIEVED REMOTE 1");
+          flag = 0;
+          device_id = 1;
+          devices_count = 1;
+        }
+        if (received == CARMP3.btn_2)
+        {
+          DD("INIT_RECIEVED REMOTE 2");
+          flag = 0;
+          device_id = 2;
+          devices_count = 2;
+        }
+        if (received == CARMP3.btn_3)
+        {
+          DD("INIT_RECIEVED REMOTE 3");
+          flag = 0;
+          device_id = 3;
+          devices_count = 3;
+        }
+        if (received == CARMP3.btn_4)
+        {
+          DD("INIT_RECIEVED REMOTE 4");
+          flag = 0;
+          device_id = 4;
+          devices_count = 4;
+        }
+        if (received == CARMP3.btn_5)
+        {
+          DD("INIT_RECIEVED REMOTE 5");
+          flag = 0;
+          device_id = 5;
+          devices_count = 5;
+        }
+        if (received == CARMP3.btn_6)
+        {
+          DD("INIT_RECIEVED REMOTE 6");
+          flag = 0;
+          device_id = 6;
+          devices_count = 6;
+        }
+        if (received == CARMP3.btn_7)
+        {
+          DD("INIT_RECIEVED REMOTE 7");
+          flag = 0;
+          device_id = 7;
+          devices_count = 7;
+        }
+        if (received == CARMP3.btn_8)
+        {
+          DD("INIT_RECIEVED REMOTE 8");
+          flag = 0;
+          device_id = 8;
+          devices_count = 8;
+        }
+        if (received == CARMP3.btn_9)
+        {
+          DD("INIT_RECIEVED REMOTE 9");
+          flag = 0;
+          device_id = 9;
+          devices_count = 9;
+        }
+        if (received == CARMP3.btn_0)
+        {
+          DD("INIT_RECIEVED REMOTE 10");
+          flag = 0;
+          device_id = 10;
+          devices_count = 10;
+        }
+        IrReceiver.resume();
       }
-      DDD("k0 = ");
-      DD(k0);
-      DDD("k1 = ");
-      DD(k1);
-
-      while (blinkSync(l_led, r_led, mPurple, 1, 100, 0, 100, 0, 0, 255, 1, 1))
+      if (millis() - InintTimer > 5000)
       {
+        flag = 0;
+        device_id = 1;
+        devices_count = 1;
+        DD("No devices found");
+        DD_LED(0);
       }
     }
+    DDD("Device ID: ");
+    DD(device_id);
+    DDD("Devices count: ");
+    DD(devices_count);
+    DD_LED(device_id);
+    workerThread = 1;
+    pattern = pread_8t(PATTERNS[0][device_id-1]);
+  }
+  break;
 
-    IrReceiver.resume();
-  }
-  static uint16_t t1 = random(200, 1000), t2 = random(200, 2000), t3 = random(200, 1000), t4 = random(5000, 10000);
-  if (!blinkSync(l_led, r_led, mAqua, 1, t1, t2, t3, t4, 50, 255, 1, 1))
+  default:
   {
-    t1 = random(200, 1000);
-    t2 = random(200, 2000);
-    t3 = random(200, 1000);
-    t4 = random(5000, 10000);
-  }
-
-  if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
-  {
-    l_vib = 0;
-    timer_l_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
-  }
-  if ((timer_type)(millis() - timer_r_vibr) >= timer_vibro_reset)
-  {
-    r_vib = 0;
-    timer_r_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
-  }
-
-  if (l_vib > VIBRATOR_LEFT_SENS)
-  {
-    while (blinkL(l_led, pattern ? mRed : mLime, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+    SendData();
+    if (IrReceiver.decode())
     {
-      DD("LEFT_RED", 1000);
+      SendTimer = millis();
+      received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+      DDD("{");
+      DDD(received.address);
+      DDD(", ");
+      DDD(received.command);
+      DD("}");
+
+      if (received == CARMP3.btn_CH_minus) // сброс шаблона
+      {
+        int a = analogRead(A0);
+        DDD("A0 = ");
+        DD(a);
+        pattern = random(2147483648) % 2;
+        DDD("Pattern changed: ");
+        DD(pattern);
+        static uint16_t k0 = 0, k1 = 0;
+        if (pattern)
+        {
+          k1 += 1;
+        }
+        else
+        {
+          k0 += 1;
+        }
+        DDD("k0 = ");
+        DD(k0);
+        DDD("k1 = ");
+        DD(k1);
+
+        while (blinkSync(l_led, r_led, mPurple, 1, 100, 0, 100, 0, 0, 255, 1, 1))
+        {
+        }
+      }
+
+      IrReceiver.resume();
+    }
+    static uint16_t t1 = random(200, 1000), t2 = random(200, 2000), t3 = random(200, 1000), t4 = random(5000, 10000);
+    if (!blinkSync(l_led, r_led, mAqua, 1, t1, t2, t3, t4, 50, 255, 1, 1))
+    {
+      t1 = random(200, 1000);
+      t2 = random(200, 2000);
+      t3 = random(200, 1000);
+      t4 = random(5000, 10000);
+    }
+
+    if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
+    {
+      l_vib = 0;
+      timer_l_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
+    }
+    if ((timer_type)(millis() - timer_r_vibr) >= timer_vibro_reset)
+    {
+      r_vib = 0;
+      timer_r_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
+    }
+
+    if (l_vib > VIBRATOR_LEFT_SENS)
+    {
+      while (blinkL(l_led, pattern ? mRed : mLime, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+      {
+        DD("LEFT_RED", 1000);
 #ifdef MY_DEBUG_LED
-      static uint16_t DBTime = 0;
-      if ((uint16_t)(millis() - DBTime) > 50)
-      {
-        DBTime += 50;
-        PORTB ^= B00100000; // Переключить 13 порт
-      }
+        static uint16_t DBTime = 0;
+        if ((uint16_t)(millis() - DBTime) > 50)
+        {
+          DBTime += 50;
+          PORTB ^= B00100000; // Переключить 13 порт
+        }
 #endif
+      }
+      r_vib = 0;
     }
-    r_vib = 0;
-  }
-  if (r_vib > VIBRATOR_RIGHT_SENS)
-  {
-    while (blinkR(r_led, pattern ? mLime : mRed, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+    if (r_vib > VIBRATOR_RIGHT_SENS)
     {
-      DD("RIGHT_RED", 1000);
+      while (blinkR(r_led, pattern ? mLime : mRed, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+      {
+        DD("RIGHT_RED", 1000);
 
 #ifdef MY_DEBUG_LED
-      static uint16_t DBTime = 0;
-      if ((uint16_t)(millis() - DBTime) > 50)
-      {
-        DBTime += 50;
-        PORTB ^= B00100000; // Переключить 13 порт
-      }
+        static uint16_t DBTime = 0;
+        if ((uint16_t)(millis() - DBTime) > 50)
+        {
+          DBTime += 50;
+          PORTB ^= B00100000; // Переключить 13 порт
+        }
 #endif
+      }
+      l_vib = 0;
     }
-    l_vib = 0;
+  }
+  break;
   }
 }
 

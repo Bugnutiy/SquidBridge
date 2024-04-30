@@ -4,7 +4,7 @@
 #include <IRremote.hpp>
 #include <MemoryFree.h>
 
-#define SEND_DELAY 20
+#define SEND_DELAY 200
 
 #pragma pack(push, 1)
 
