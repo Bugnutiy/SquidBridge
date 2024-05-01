@@ -96,22 +96,22 @@ void loop()
         static bool f1 = 0;
         f1 = !f1;
         r_led.fill(0, 2, f1 ? mRed : mBlack);
+        l_led.fill(5, 7, f1 ? mRed : mBlack);
         r_led.show();
+        l_led.show();
       });
       if (millis() - SendTimer >= SEND_DELAY * 2)
       {
-        // IrReceiver.stop();
         IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
-        // delay(SEND_DELAY);
-        // IrReceiver.begin(RECEIVER_PIN);
       }
       if (IrReceiver.decode())
       {
         SendTimer = millis();
         received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-        if (received.address == device_id)
+        if (received.address == device_id || received.command == 0)
         {
           IrReceiver.resume();
+          goto stop;
         }
 
         DDD("{");
@@ -207,6 +207,7 @@ void loop()
         DD("No devices found");
         DD_LED(0);
       }
+    stop:;
     }
     DDD("Device ID: ");
     DD(device_id);
@@ -231,44 +232,18 @@ void loop()
       DDD(received.command);
       DD("}");
 
-      // if (received == CARMP3::btn_CH_minus) // сброс шаблона
-      // {
-      //   int a = analogRead(A0);
-      //   DDD("A0 = ");
-      //   DD(a);
-      //   pattern = random(2147483648) % 2;
-      //   DDD("Pattern changed: ");
-      //   DD(pattern);
-      //   static uint16_t k0 = 0, k1 = 0;
-      //   if (pattern)
-      //   {
-      //     k1 += 1;
-      //   }
-      //   else
-      //   {
-      //     k0 += 1;
-      //   }
-      //   DDD("k0 = ");
-      //   DD(k0);
-      //   DDD("k1 = ");
-      //   DD(k1);
-      //   while (blinkSync(l_led, r_led, mPurple, 1, 100, 0, 100, 0, 0, 255, 1, 1))
-      //   {
-      //   }
-      // }
-
       switch (received.command)
       {
       case STD_COMMANDS::SYNC_COMMAND:
       {
-        if (received.address == device_id - 1)
+        if (received.address == uint8_t(device_id - 1))
           sync_time = millis();
         break;
       }
       case STD_COMMANDS::INIT_REQUEST:
       {
-        if (received.address != device_id)
-          SendDataQueue.push_front(IrData{device_id, STD_COMMANDS::INIT_COMMAND});
+        if (received.address != device_id && device_id == devices_count)
+          SendDataAddFront(device_id, STD_COMMANDS::INIT_COMMAND);
         break;
       }
       default:

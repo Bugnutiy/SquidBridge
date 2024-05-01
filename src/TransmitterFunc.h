@@ -62,7 +62,7 @@ void SendDataAddFront(uint16_t address, uint8_t command)
 uint16_t SendTimer = 0;
 bool SendData()
 {
-    if (SendDataQueue.size() == 0)
+    if (SendDataQueue.size() <= 0)
         return false;
     if (uint8_t(millis() - SendTimer) > SEND_DELAY)
     {
