@@ -9,7 +9,7 @@
 
 #define LEFT_PIN 7  // пин L-ленты
 #define RIGHT_PIN 8 // пин R-ленты
-#define DEKAY 30
+#define DEKAY 15
 
 #define BRIGHTNESS_MAX 255 // 10..255
 
@@ -58,7 +58,7 @@ uint8_t device_id = 255, devices_count = 1;
 
 uint8_t workerMain = 0;
 uint8_t pattern_number = 0;
-uint16_t patternChangeTimer = 0;
+uint32_t patternChangeTimer = 0;
 
 bool initSender = 0, initSent = 0;
 void setup()
@@ -303,33 +303,34 @@ void loop()
       }
       break;
 
-      case CARMP3::btn_CH_minus:
+      case CARMP3::btn_CH_minus: // Change pattern
       {
         if (received.address == CARMP3::address)
         {
-          if (millis() - patternChangeTimer >= PATTERN_CHANGE_TIME)
+          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
           {
-            patternChangeTimer = millis();
             pattern_number++;
             if (pattern_number < PATTERNS_COUNT)
               pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
             else
               pattern = random(2147483647) % 2;
 
-            while (blinkSync(l_led, r_led, mPurple, 1, 100, 100, 100, 0, 0, 255, DEKAY, 1))
+            while (blinkSync(l_led, r_led, mPurple, 1, 100, 100, 100, 0, 20, 255, DEKAY, 1))
             {
-              SHOW_NUM_R(r_led, pattern_number % 10, mPurple, mGray);
-              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mPurple, mGray);
+              SHOW_NUM_R(r_led, pattern_number % 10, mPurple, mBlack);
+              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mPurple, mBlack);
             }
             DDD("Pattern changed: ");
             DD(pattern);
             DDD("Pattern number:");
             DD(pattern_number);
+            patternChangeTimer = millis();
           }
           DD("Pattern request sending");
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+
           goto stop1;
         }
       }
@@ -341,7 +342,6 @@ void loop()
         {
           if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
           {
-            patternChangeTimer = millis();
             pattern_number++;
             if (pattern_number < PATTERNS_COUNT)
               pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
@@ -349,20 +349,16 @@ void loop()
               pattern = random(2147483647) % 2;
             while (blinkSync(l_led, r_led, mPurple, 1, 100, 100, 100, 0, 0, 255, DEKAY, 0))
             {
-              SHOW_NUM_R(r_led, pattern_number % 10, mWhite, mPurple, 0, 0);
-              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mWhite, mPurple, 0, 0);
-              r_led.show();
-              l_led.show();
+              SHOW_NUM_R(r_led, pattern_number % 10, mPurple);
+              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mPurple);
             }
             DDD("Pattern changed: ");
             DD(pattern);
             DDD("Pattern number:");
             DD(pattern_number);
+            patternChangeTimer = millis();
           }
           DD("Pattern request sending");
-        }
-        if (received.address)
-        {
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
           SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
@@ -376,7 +372,6 @@ void loop()
     stop1:
       IrReceiver.resume();
     }
-    SendData();
 
     if (blinkSync(l_led, r_led, mAqua, 1, 200, 200, 200, 4400, 50, 255, DEKAY, 1) == 3)
     {
@@ -385,6 +380,8 @@ void loop()
         DD("Send Sync Command:");
       });
     }
+
+    SendData();
 
     if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
     {
