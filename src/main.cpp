@@ -1,6 +1,6 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-#define MY_DEBUG
+// #define MY_DEBUG
 #include "My_Debug.h"
 
 // #define DEBUG 1
@@ -9,6 +9,7 @@
 
 #define LEFT_PIN 7  // пин L-ленты
 #define RIGHT_PIN 8 // пин R-ленты
+#define DEKAY 30 
 
 #define BRIGHTNESS_MAX 255 // 10..255
 
@@ -24,6 +25,8 @@
 
 #define timer_type uint16_t
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
+
+#define PATTERN_CHANGE_TIME 20000
 
 #define COLOR_DEBTH 1
 
@@ -52,6 +55,12 @@ bool pattern = 0;
 
 IrData received;
 uint8_t device_id = 255, devices_count = 1;
+
+uint8_t workerMain = 0;
+uint8_t pattern_number = 0;
+uint16_t patternChangeTimer = 0;
+
+bool initSender = 0, initSent = 0;
 void setup()
 {
 #ifdef MY_DEBUG
@@ -77,155 +86,176 @@ void setup()
   DD(pattern);
   DDD("Seed: ");
   DD(seed);
+
+  static bool flag = 1;
+  static uint16_t InintTimer = millis();
+  DD("Waiting for initialization");
+  while (flag)
+  {
+    TMR16(500, {
+      static bool f1 = 0;
+      f1 = !f1;
+      r_led.fill(0, 2, f1 ? mRed : mBlack);
+      l_led.fill(6, 8, f1 ? mRed : mBlack);
+      r_led.show();
+      l_led.show();
+    });
+    if (millis() - SendTimer >= SEND_DELAY * 2)
+    {
+      IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
+    }
+    if (IrReceiver.decode())
+    {
+      SendTimer = millis();
+      received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+      if (received.address == device_id || received.command == 0)
+      {
+        goto stop;
+      }
+
+      DDD("{");
+      DDD(received.address);
+      DDD(", ");
+      DDD(received.command);
+      DD("}");
+
+      if (received.command == STD_COMMANDS::INIT_COMMAND)
+      {
+        DD("INIT_RECIEVED");
+        flag = 0;
+        device_id = received.address + 1;
+        devices_count = device_id;
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_1})
+      {
+        DD("INIT_RECIEVED REMOTE 1");
+        flag = 0;
+        device_id = 1;
+        devices_count = 1;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_2})
+      {
+        DD("INIT_RECIEVED REMOTE 2");
+        flag = 0;
+        device_id = 2;
+        devices_count = 2;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_3})
+      {
+        DD("INIT_RECIEVED REMOTE 3");
+        flag = 0;
+        device_id = 3;
+        devices_count = 3;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_4})
+      {
+        DD("INIT_RECIEVED REMOTE 4");
+        flag = 0;
+        device_id = 4;
+        devices_count = 4;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_5})
+      {
+        DD("INIT_RECIEVED REMOTE 5");
+        flag = 0;
+        device_id = 5;
+        devices_count = 5;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_6})
+      {
+        DD("INIT_RECIEVED REMOTE 6");
+        flag = 0;
+        device_id = 6;
+        devices_count = 6;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_7})
+      {
+        DD("INIT_RECIEVED REMOTE 7");
+        flag = 0;
+        device_id = 7;
+        devices_count = 7;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_8})
+      {
+        DD("INIT_RECIEVED REMOTE 8");
+        flag = 0;
+        device_id = 8;
+        devices_count = 8;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_9})
+      {
+        DD("INIT_RECIEVED REMOTE 9");
+        flag = 0;
+        device_id = 9;
+        devices_count = 9;
+        goto stop;
+      }
+      if (received == IrData{CARMP3::address, CARMP3::btn_0})
+      {
+        DD("INIT_RECIEVED REMOTE 10");
+        flag = 0;
+        device_id = 10;
+        devices_count = 10;
+      }
+    stop:
+      IrReceiver.resume();
+    }
+    if (millis() - InintTimer > 5000)
+    {
+      flag = 0;
+      device_id = 1;
+      devices_count = 1;
+      DD("No devices found");
+      DD_LED(0);
+    }
+  }
+  DDD("Device ID: ");
+  DD(device_id);
+  DDD("Devices count: ");
+  DD(devices_count);
+  DD_LED(device_id);
+  workerMain = 0;
+  if (device_id == 10)
+  {
+    initSender = 0;
+  }
+  pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
 }
 
-uint8_t workerMain = 0;
-uint32_t sync_time = 0;
 void loop()
 {
   switch (workerMain)
   {
   case 0:
   {
-    static bool flag = 1;
-    static uint16_t InintTimer = millis();
-    DD("Waiting for initialization");
-    while (flag)
+    if (initSender)
     {
       TMR16(500, {
-        static bool f1 = 0;
-        f1 = !f1;
-        r_led.fill(0, 2, f1 ? mRed : mBlack);
-        l_led.fill(5, 7, f1 ? mRed : mBlack);
-        r_led.show();
-        l_led.show();
+        if (!SendData())
+          SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
       });
-      if (millis() - SendTimer >= SEND_DELAY * 2)
-      {
-        IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
-      }
-      if (IrReceiver.decode())
-      {
-        SendTimer = millis();
-        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-        if (received.address == device_id || received.command == 0)
-        {
-          IrReceiver.resume();
-          goto stop;
-        }
-
-        DDD("{");
-        DDD(received.address);
-        DDD(", ");
-        DDD(received.command);
-        DD("}");
-
-        if (received.command == STD_COMMANDS::INIT_COMMAND || received.command == STD_COMMANDS::SYNC_COMMAND)
-        {
-          DD("INIT_RECIEVED");
-          flag = 0;
-          device_id = received.address + 1;
-          devices_count = device_id;
-        }
-        if (received == CARMP3::btn_1)
-        {
-          DD("INIT_RECIEVED REMOTE 1");
-          flag = 0;
-          device_id = 1;
-          devices_count = 1;
-        }
-        if (received == CARMP3::btn_2)
-        {
-          DD("INIT_RECIEVED REMOTE 2");
-          flag = 0;
-          device_id = 2;
-          devices_count = 2;
-        }
-        if (received == CARMP3::btn_3)
-        {
-          DD("INIT_RECIEVED REMOTE 3");
-          flag = 0;
-          device_id = 3;
-          devices_count = 3;
-        }
-        if (received == CARMP3::btn_4)
-        {
-          DD("INIT_RECIEVED REMOTE 4");
-          flag = 0;
-          device_id = 4;
-          devices_count = 4;
-        }
-        if (received == CARMP3::btn_5)
-        {
-          DD("INIT_RECIEVED REMOTE 5");
-          flag = 0;
-          device_id = 5;
-          devices_count = 5;
-        }
-        if (received == CARMP3::btn_6)
-        {
-          DD("INIT_RECIEVED REMOTE 6");
-          flag = 0;
-          device_id = 6;
-          devices_count = 6;
-        }
-        if (received == CARMP3::btn_7)
-        {
-          DD("INIT_RECIEVED REMOTE 7");
-          flag = 0;
-          device_id = 7;
-          devices_count = 7;
-        }
-        if (received == CARMP3::btn_8)
-        {
-          DD("INIT_RECIEVED REMOTE 8");
-          flag = 0;
-          device_id = 8;
-          devices_count = 8;
-        }
-        if (received == CARMP3::btn_9)
-        {
-          DD("INIT_RECIEVED REMOTE 9");
-          flag = 0;
-          device_id = 9;
-          devices_count = 9;
-        }
-        if (received == CARMP3::btn_0)
-        {
-          DD("INIT_RECIEVED REMOTE 10");
-          flag = 0;
-          device_id = 10;
-          devices_count = 10;
-        }
-        IrReceiver.resume();
-      }
-      if (millis() - InintTimer > 5000)
-      {
-        flag = 0;
-        device_id = 1;
-        devices_count = 1;
-        DD("No devices found");
-        DD_LED(0);
-      }
-    stop:;
     }
-    DDD("Device ID: ");
-    DD(device_id);
-    DDD("Devices count: ");
-    DD(devices_count);
-    DD_LED(device_id);
-    workerMain = 1;
-    pattern = pread_8t(PATTERNS[0][device_id - 1]);
-  }
-  break;
 
-  case 1:
-  {
-    SendData();
     if (IrReceiver.decode())
     {
       SendTimer = millis();
       received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+      if (received.address == device_id)
+      {
+        goto stop1;
+      }
       DDD("{");
       DDD(received.address);
       DDD(", ");
@@ -237,27 +267,127 @@ void loop()
       case STD_COMMANDS::SYNC_COMMAND:
       {
         if (received.address == uint8_t(device_id - 1))
-          sync_time = millis();
-        break;
+        {
+          blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
+          DD("Sync command received");
+          goto stop1;
+        }
       }
+      break;
+
+      case STD_COMMANDS::INIT_COMMAND:
+      {
+        if (received.address == uint8_t(device_id - 1))
+        {
+          SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+          goto stop1;
+        }
+      }
+      break;
+
       case STD_COMMANDS::INIT_REQUEST:
       {
-        if (received.address != device_id && device_id == devices_count)
-          SendDataAddFront(device_id, STD_COMMANDS::INIT_COMMAND);
-        break;
+        if (received.address != device_id && !initSent)
+        {
+          initSender = 1;
+          goto stop1;
+        }
       }
+      break;
+
+      case STD_COMMANDS::INIT_ANSWER:
+      {
+        if (received.address == uint8_t(device_id + 1))
+        {
+          initSent = 1;
+          initSender = 0;
+          DD_LED((device_id + 1));
+          goto stop1;
+        }
+      }
+      break;
+
+      case CARMP3::btn_CH_minus:
+      {
+        if (received.address == CARMP3::address)
+        {
+          if (millis() - patternChangeTimer >= PATTERN_CHANGE_TIME)
+          {
+            patternChangeTimer = millis();
+            pattern_number++;
+            if (pattern_number < PATTERNS_COUNT)
+              pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+            else
+              pattern = random(2147483647) % 2;
+
+            while (blinkSync(l_led, r_led, mPurple, 1, 100, 100, 100, 0, 0, 255, DEKAY, 1))
+            {
+              SHOW_NUM_R(r_led, pattern_number % 10, mPurple, mGray);
+              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mPurple, mGray);
+            }
+            DDD("Pattern changed: ");
+            DD(pattern);
+            DDD("Pattern number:");
+            DD(pattern_number);
+          }
+          DD("Pattern request sending");
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          goto stop1;
+        }
+      }
+      break;
+
+      case STD_COMMANDS::CHANGE_PATTERN:
+      {
+        if (received.address == uint8_t(device_id - 1))
+        {
+          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+          {
+            patternChangeTimer = millis();
+            pattern_number++;
+            if (pattern_number < PATTERNS_COUNT)
+              pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+            else
+              pattern = random(2147483647) % 2;
+            while (blinkSync(l_led, r_led, mPurple, 1, 100, 100, 100, 0, 0, 255, DEKAY, 0))
+            {
+              SHOW_NUM_R(r_led, pattern_number % 10, mWhite, mPurple, 0, 0);
+              SHOW_NUM_L(l_led, (pattern_number / 10) % 10, mWhite, mPurple, 0, 0);
+              r_led.show();
+              l_led.show();
+            }
+            DDD("Pattern changed: ");
+            DD(pattern);
+            DDD("Pattern number:");
+            DD(pattern_number);
+          }
+          DD("Pattern request sending");
+        }
+        if (received.address)
+        {
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+        }
+      }
+      break;
+
       default:
         break;
       }
+    stop1:
       IrReceiver.resume();
     }
-    static uint16_t t1 = random(200, 1000), t2 = random(200, 2000), t3 = random(200, 1000), t4 = random(5000, 10000);
-    if (!blinkSync(l_led, r_led, mAqua, 1, t1, t2, t3, t4, 50, 255, 1, 1))
+    SendData();
+
+    if (blinkSync(l_led, r_led, mAqua, 1, 200, 200, 200, 4400, 50, 255, DEKAY, 1) == 3)
     {
-      t1 = random(200, 1000);
-      t2 = random(200, 2000);
-      t3 = random(200, 1000);
-      t4 = random(5000, 10000);
+      TMR16(10000, {
+        SendDataAddFront(device_id, STD_COMMANDS::SYNC_COMMAND);
+        DD("Send Sync Command:");
+      });
     }
 
     if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
@@ -273,7 +403,7 @@ void loop()
 
     if (l_vib > VIBRATOR_LEFT_SENS)
     {
-      while (blinkL(l_led, pattern ? mRed : mLime, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+      while (blinkL(l_led, pattern ? mRed : mLime, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
         DD("LEFT_RED", 1000);
 #ifdef MY_DEBUG_LED
@@ -289,7 +419,7 @@ void loop()
     }
     if (r_vib > VIBRATOR_RIGHT_SENS)
     {
-      while (blinkR(r_led, pattern ? mLime : mRed, 3, 100, 0, 100, 0, 0, 255, 1, 1))
+      while (blinkR(r_led, pattern ? mLime : mRed, 2, 100, 0, 500, 0, 0, 255, DEKAY, 1))
       {
         DD("RIGHT_RED", 1000);
 
@@ -307,7 +437,7 @@ void loop()
   }
   break;
   default:
-    workerMain = 1;
+    workerMain = 0;
     break;
   }
 }

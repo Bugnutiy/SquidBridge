@@ -22,7 +22,7 @@ mData prev_color = mBlack;
 /// @param dekay Задердка исполнения (Больше -> Меньше FPS)
 /// @param Show Обновлять автоматически?
 /// @return Идёт выполнение
-bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
+uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
 {
   static uint16_t TT1 = 0, TT2 = 0, TT3 = 0, TT4 = 0;
   static uint8_t worker = 0, i = 0;
@@ -170,7 +170,7 @@ bool blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
 /// @param dekay Задердка исполнения (Больше -> Меньше FPS)
 /// @param Show Обновлять автоматически?
 /// @return Идёт выполнение
-bool blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
+uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
 {
   static uint16_t TT1 = 0, TT2 = 0, TT3 = 0, TT4 = 0;
   static uint8_t worker = 0, i = 0;
@@ -319,13 +319,17 @@ bool blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, uint1
 /// @param Br_max Максимальная яркость
 /// @param dekay Задердка исполнения (Больше -> Меньше FPS)
 /// @param Show Обновлять автоматически?
+/// @param workerSet сменить этап исполнения
 /// @return Идёт выполнение
-bool blinkSync(L_INIT &l_led, R_INIT &r_led, const mData &color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1)
+uint8_t blinkSync(L_INIT &l_led, R_INIT &r_led, const mData &color, uint8_t N, uint16_t T1, uint16_t T2, uint16_t T3, uint16_t T4, uint8_t Br_min = 0, uint8_t Br_max = 255, uint8_t dekay = 15, bool Show = 1, int8_t workerSet = -1)
 {
   static uint16_t TT1 = 0, TT2 = 0, TT3 = 0, TT4 = 0;
   static uint8_t worker = 0, i = 0;
   static int32_t BR = 0;
-
+  if (workerSet > -1)
+  {
+    worker = workerSet;
+  }
   if (prev_color != color)
   {
     // DDD("R: ");
@@ -502,8 +506,9 @@ const uint8_t NUMB_R[][15] PROGMEM = {
 /// @param led Управляющая светодиодов
 /// @param number Цифра
 /// @param color1 Цвет цифры
-/// @param color2 Цвет фона
-void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color1, mData color2 = mBlack, bool show = 1)
+/// @param bg_color Цвет фона
+/// @param bg_show показывать ли bg_color
+void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color1, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
 {
   for (uint8_t i = 0; i < NUMLEDS; i++)
   {
@@ -513,19 +518,20 @@ void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color1, mData color2 = mBlack
     }
     else
     {
-      led.set(i, color2);
+      if (bg_show)
+        led.set(i, bg_color);
     }
   }
   if (show)
     led.show();
 }
-
 /// @brief
 /// @param led Управляющая светодиодов
 /// @param number Цифра
 /// @param color1 Цвет цифры
-/// @param color2 Цвет фона
-void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color1, mData color2 = mBlack, bool show = 1)
+/// @param bg_color Цвет фона
+/// @param bg_show показывать ли bg_color
+void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color1, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
 {
   for (uint8_t i = 0; i < NUMLEDS; i++)
   {
@@ -535,7 +541,8 @@ void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color1, mData color2 = mBlack
     }
     else
     {
-      led.set(i, color2);
+      if (bg_show)
+        led.set(i, bg_color);
     }
   }
   if (show)

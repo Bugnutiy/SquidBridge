@@ -15,7 +15,8 @@
  * The address and command are stored as uint16_t and uint8_t respectively.
  * The operator== function is used to compare two IrData objects for equality.
  */
-struct IrData {
+struct IrData
+{
     /**
      * @brief Address of the IR data.
      *
@@ -40,7 +41,8 @@ struct IrData {
      *
      * @return true if the address and command of the two objects are the same, and false otherwise.
      */
-    bool operator==(const IrData& other) const {
+    bool operator==(const IrData &other) const
+    {
         return address == other.address && command == other.command;
     }
 };
@@ -56,20 +58,30 @@ void SendDataAdd(uint16_t address, uint8_t command)
 
 void SendDataAddFront(uint16_t address, uint8_t command)
 {
-    SendDataQueue.push_front(IrData{address, command});
+    if (static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue))
+        SendDataQueue.push_front(IrData{address, command});
 }
 
 uint16_t SendTimer = 0;
+/**
+ * @brief Function to send data using the IR protocol.
+ * @return true if there is data in queue or sent successful, false otherwise.
+ */
 bool SendData()
 {
-    if (SendDataQueue.size() <= 0)
+    if (SendDataQueue.size() < 1)
         return false;
     if (uint8_t(millis() - SendTimer) > SEND_DELAY)
     {
+        DDD("Sending: {");
+        DDD(SendDataQueue.front().address);
+        DDD(",");
+        DDD(SendDataQueue.front().command);
+        DD("}");
         SendTimer = millis();
-        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, 3);
+        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, 0);
         SendDataQueue.pop_front();
         return true;
     }
-    return false;
+    return true;
 }

@@ -62,7 +62,6 @@
 
 #define DD(...)
 #define DDD(...)
-#define DD_LED()
 
 #define DD_LED(X)                           \
   {                                         \
