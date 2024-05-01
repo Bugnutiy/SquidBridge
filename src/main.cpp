@@ -9,7 +9,7 @@
 
 #define LEFT_PIN 7  // пин L-ленты
 #define RIGHT_PIN 8 // пин R-ленты
-#define DEKAY 30 
+#define DEKAY 30
 
 #define BRIGHTNESS_MAX 255 // 10..255
 
@@ -227,10 +227,6 @@ void setup()
   DD(devices_count);
   DD_LED(device_id);
   workerMain = 0;
-  if (device_id == 10)
-  {
-    initSender = 0;
-  }
   pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
 }
 
