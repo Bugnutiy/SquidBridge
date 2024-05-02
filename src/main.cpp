@@ -82,10 +82,10 @@ void setup()
   randomSeed(analogRead(A0));
   IrReceiver.begin(RECEIVER_PIN);
   IrSender.begin(SENDER_PIN);
-  DDD("Pattern: ");
-  DD(pattern);
-  DDD("Seed: ");
-  DD(seed);
+  // DDD("Pattern: ");
+  // DD(pattern);
+  // DDD("Seed: ");
+  // DD(seed);
 
   static bool flag = 1;
   static uint16_t InintTimer = millis();
@@ -113,11 +113,11 @@ void setup()
         goto stop;
       }
 
-      DDD("{");
-      DDD(received.address);
-      DDD(", ");
-      DDD(received.command);
-      DD("}");
+      // DDD("{");
+      // DDD(received.address);
+      // DDD(", ");
+      // DDD(received.command);
+      // DD("}");
 
       if (received.command == STD_COMMANDS::INIT_COMMAND)
       {
@@ -265,7 +265,7 @@ void loop()
         if (received.address == uint8_t(device_id - 1))
         {
           blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
-          DD("Sync command received");
+          DD("Sync completed");
           goto stop1;
         }
       }
@@ -295,9 +295,13 @@ void loop()
       {
         if (received.address == uint8_t(device_id + 1))
         {
+          if (!initSent)
+          {
+            devices_count++;
+          }
           initSent = 1;
           initSender = 0;
-          DD_LED((device_id + 1));
+          DD_LED((devices_count));
           goto stop1;
         }
       }
