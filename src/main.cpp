@@ -1,6 +1,6 @@
 #include <Arduino.h>
 // #define MY_DEBUG_LED
-// #define MY_DEBUG
+#define MY_DEBUG
 #include "My_Debug.h"
 
 // #define DEBUG 1
@@ -27,6 +27,7 @@
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
 #define PATTERN_CHANGE_TIME 20000
+#define INIT_TIME 10000
 
 #define COLOR_DEBTH 1
 
@@ -212,7 +213,7 @@ void setup()
     stop:
       IrReceiver.resume();
     }
-    if (millis() - InintTimer > 5000)
+    if (millis() - InintTimer > INIT_TIME)
     {
       flag = 0;
       device_id = 1;
@@ -342,7 +343,7 @@ void loop()
 
       case STD_COMMANDS::CHANGE_PATTERN:
       {
-        if (received.address == uint8_t(device_id - 1))
+        if (received.address < device_id)
         {
           if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
           {
@@ -381,7 +382,7 @@ void loop()
     {
       TMR16(10000, {
         SendDataAddFront(device_id, STD_COMMANDS::SYNC_COMMAND);
-        DD("Send Sync Command:");
+        // DD("Send Sync Command:");
       });
     }
 
@@ -402,7 +403,6 @@ void loop()
     {
       while (blinkL(l_led, pattern ? mRed : mLime, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
-        DD("LEFT_RED", 1000);
 #ifdef MY_DEBUG_LED
         static uint16_t DBTime = 0;
         if ((uint16_t)(millis() - DBTime) > 50)
@@ -418,7 +418,6 @@ void loop()
     {
       while (blinkR(r_led, pattern ? mLime : mRed, 2, 100, 0, 500, 0, 0, 255, DEKAY, 1))
       {
-        DD("RIGHT_RED", 1000);
 
 #ifdef MY_DEBUG_LED
         static uint16_t DBTime = 0;

@@ -505,16 +505,16 @@ const uint8_t NUMB_R[][15] PROGMEM = {
 /// @brief
 /// @param led Управляющая светодиодов
 /// @param number Цифра
-/// @param color1 Цвет цифры
+/// @param color Цвет цифры
 /// @param bg_color Цвет фона
 /// @param bg_show показывать ли bg_color
-void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color1, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
+void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
 {
   for (uint8_t i = 0; i < NUMLEDS; i++)
   {
     if (pread_8t(NUMB_L[number][i]))
     {
-      led.set(i, color1);
+      led.set(i, color);
     }
     else
     {
@@ -528,16 +528,16 @@ void SHOW_NUM_L(L_INIT &led, uint8_t number, mData color1, mData bg_color = mBla
 /// @brief
 /// @param led Управляющая светодиодов
 /// @param number Цифра
-/// @param color1 Цвет цифры
+/// @param color Цвет цифры
 /// @param bg_color Цвет фона
 /// @param bg_show показывать ли bg_color
-void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color1, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
+void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
 {
   for (uint8_t i = 0; i < NUMLEDS; i++)
   {
     if (pread_8t(NUMB_R[number][i]))
     {
-      led.set(i, color1);
+      led.set(i, color);
     }
     else
     {
@@ -547,4 +547,10 @@ void SHOW_NUM_R(R_INIT &led, uint8_t number, mData color1, mData bg_color = mBla
   }
   if (show)
     led.show();
+}
+
+void SHOW_NUM(R_INIT &rled, L_INIT &lled, uint8_t number, mData color, mData bg_color = mBlack, bool show = 1, bool bg_show = 1)
+{
+  SHOW_NUM_L(lled, (number / 10) % 10, color, bg_color, show, bg_show);
+  SHOW_NUM_R(rled, number % 10, color, bg_color, show, bg_show);
 }
