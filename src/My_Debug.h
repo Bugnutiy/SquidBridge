@@ -1,6 +1,18 @@
 #pragma once
 #include <Arduino.h>
 // #define MY_DEBUG
+// #define MY_DEBUG_LED 1000
+
+#ifdef MY_DEBUG_LED
+#define DD_LED(X)                           \
+  {                                         \
+    SHOW_NUM_L(l_led, (X / 10) % 10, mRed); \
+    SHOW_NUM_R(r_led, X % 10, mRed);        \
+    delay(MY_DEBUG_LED);                    \
+  }
+#else
+#define DD_LED(X)
+#endif
 
 #ifdef MY_DEBUG
 
@@ -52,22 +64,10 @@
  */
 #define DD(...) DD_SELECT(__VA_ARGS__, DD_3, DD_2, DD_1, dummy)(__VA_ARGS__)
 #define DDD(...) DD_SELECT(__VA_ARGS__, DDD_3, DDD_2, DDD_1, dummy)(__VA_ARGS__)
-#define DD_LED(X)                           \
-  {                                         \
-    SHOW_NUM_L(l_led, (X / 10) % 10, mRed); \
-    SHOW_NUM_R(r_led, X % 10, mRed);        \
-    delay(1000);                            \
-  }
+
 #else
 
 #define DD(...)
 #define DDD(...)
-
-#define DD_LED(X)                           \
-  {                                         \
-    SHOW_NUM_L(l_led, (X / 10) % 10, mRed); \
-    SHOW_NUM_R(r_led, X % 10, mRed);        \
-    delay(1000);                            \
-  }
 
 #endif

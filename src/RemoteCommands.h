@@ -30,11 +30,11 @@ namespace CARMP3
 
 namespace STD_COMMANDS
 {
-    const uint8_t INIT_COMMAND = 1;
-    const uint8_t SYNC_COMMAND = 2;
+    const uint8_t INIT_REQUEST = 1;
+    const uint8_t INIT_COMMAND = 2;
     const uint8_t INIT_ANSWER = 3;
-    const uint8_t CHANGE_PATTERN = 4;
-    const uint8_t INIT_REQUEST = 5;
+    const uint8_t SYNC_COMMAND = 4;
+    const uint8_t CHANGE_PATTERN = 5;
 }
 
 // class LGM

@@ -4,7 +4,8 @@
 #include <IRremote.hpp>
 #include <MemoryFree.h>
 
-#define SEND_DELAY 200
+#define SEND_DELAY 400
+#define SEND_DELAY_2 1000
 
 #pragma pack(push, 1)
 
@@ -65,23 +66,24 @@ void SendDataAddFront(uint16_t address, uint8_t command)
 uint16_t SendTimer = 0;
 /**
  * @brief Function to send data using the IR protocol.
- * @return true if there is data in queue or sent successful, false otherwise.
+ * @return true when data can be sent immediately, false otherwise
  */
 bool SendData()
 {
-    if (SendDataQueue.size() < 1)
-        return false;
-    if (uint8_t(millis() - SendTimer) > SEND_DELAY)
+    if (uint16_t(millis() - SendTimer) > SEND_DELAY)
     {
+        if (SendDataQueue.size() < 1)
+        {
+            return true;
+        }
         DDD("Sending: {");
         DDD(SendDataQueue.front().address);
         DDD(",");
         DDD(SendDataQueue.front().command);
         DD("}");
         SendTimer = millis();
-        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, 0);
+        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, 1);
         SendDataQueue.pop_front();
-        return true;
     }
-    return true;
+    return false;
 }

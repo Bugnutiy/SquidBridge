@@ -1,5 +1,5 @@
 #include <Arduino.h>
-// #define MY_DEBUG_LED
+#define MY_DEBUG_LED 1000
 #define MY_DEBUG
 #include "My_Debug.h"
 
@@ -27,7 +27,7 @@
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
 #define PATTERN_CHANGE_TIME 20000
-#define INIT_TIME 10000
+#define INIT_TIME 50000
 
 #define COLOR_DEBTH 1
 
@@ -101,18 +101,21 @@ void setup()
       r_led.show();
       l_led.show();
     });
-    if (millis() - SendTimer >= SEND_DELAY * 2)
+    if (uint16_t(millis() - SendTimer) >= SEND_DELAY * 2)
     {
       IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
     }
     if (IrReceiver.decode())
     {
-      SendTimer = millis();
       received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
       if (received.address == device_id || received.command == 0)
       {
         goto stop;
       }
+      if (received.address != 0)
+        SendTimer = uint16_t(millis() + (SEND_DELAY / 10));
+      else
+        SendTimer = millis();
 
       // DDD("{");
       // DDD(received.address);
@@ -213,7 +216,7 @@ void setup()
     stop:
       IrReceiver.resume();
     }
-    if (millis() - InintTimer > INIT_TIME)
+    if (uint16_t(millis() - InintTimer) > INIT_TIME)
     {
       flag = 0;
       device_id = 1;
@@ -228,7 +231,10 @@ void setup()
   DD(devices_count);
   DD_LED(device_id);
   workerMain = 0;
-  pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+  if (device_id <= 10)
+    pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+  else
+    pattern = random(2147483647) % 2;
 }
 
 void loop()
@@ -237,22 +243,17 @@ void loop()
   {
   case 0:
   {
-    if (initSender)
-    {
-      TMR16(500, {
-        if (!SendData())
-          SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
-      });
-    }
-
     if (IrReceiver.decode())
     {
-      SendTimer = millis();
       received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-      if (received.address == device_id)
+      if (received.address == device_id || received.command == 0)
       {
         goto stop1;
       }
+      if (received.address == uint8_t(device_id - 1))
+        SendTimer = uint16_t(millis() + (SEND_DELAY / 10));
+      else
+        SendTimer = millis();
       DDD("{");
       DDD(received.address);
       DDD(", ");
@@ -261,22 +262,16 @@ void loop()
 
       switch (received.command)
       {
-      case STD_COMMANDS::SYNC_COMMAND:
-      {
-        if (received.address == uint8_t(device_id - 1))
-        {
-          blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
-          DD("Sync completed");
-          goto stop1;
-        }
-      }
-      break;
 
       case STD_COMMANDS::INIT_COMMAND:
       {
         if (received.address == uint8_t(device_id - 1))
         {
+
           SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+          SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+          SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+
           goto stop1;
         }
       }
@@ -308,6 +303,17 @@ void loop()
       }
       break;
 
+      case STD_COMMANDS::SYNC_COMMAND:
+      {
+        if (received.address == uint8_t(device_id - 1))
+        {
+          blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
+          DD("Sync completed");
+          goto stop1;
+        }
+      }
+      break;
+
       case CARMP3::btn_CH_minus: // Change pattern
       {
         if (received.address == CARMP3::address)
@@ -315,7 +321,7 @@ void loop()
           if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
           {
             pattern_number++;
-            if (pattern_number < PATTERNS_COUNT)
+            if (pattern_number < PATTERNS_COUNT && device_id <= 10)
               pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
             else
               pattern = random(2147483647) % 2;
@@ -345,7 +351,7 @@ void loop()
       {
         if (received.address < device_id)
         {
-          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME && device_id <= 10)
           {
             pattern_number++;
             if (pattern_number < PATTERNS_COUNT)
@@ -377,17 +383,26 @@ void loop()
     stop1:
       IrReceiver.resume();
     }
+    if (initSender)
+    {
+      TMR16(SEND_DELAY_2, {
+        if (SendData())
+        {
+          SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
+          SendData();
+        }
+      });
+    }
 
     if (blinkSync(l_led, r_led, mAqua, 1, 200, 200, 200, 4400, 50, 255, DEKAY, 1) == 3)
     {
       TMR16(10000, {
-        SendDataAddFront(device_id, STD_COMMANDS::SYNC_COMMAND);
+        if (SendData())
+          SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
         // DD("Send Sync Command:");
       });
     }
-
     SendData();
-
     if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
     {
       l_vib = 0;
@@ -403,30 +418,13 @@ void loop()
     {
       while (blinkL(l_led, pattern ? mRed : mLime, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
-#ifdef MY_DEBUG_LED
-        static uint16_t DBTime = 0;
-        if ((uint16_t)(millis() - DBTime) > 50)
-        {
-          DBTime += 50;
-          PORTB ^= B00100000; // Переключить 13 порт
-        }
-#endif
       }
       r_vib = 0;
     }
     if (r_vib > VIBRATOR_RIGHT_SENS)
     {
-      while (blinkR(r_led, pattern ? mLime : mRed, 2, 100, 0, 500, 0, 0, 255, DEKAY, 1))
+      while (blinkR(r_led, pattern ? mLime : mRed, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
-
-#ifdef MY_DEBUG_LED
-        static uint16_t DBTime = 0;
-        if ((uint16_t)(millis() - DBTime) > 50)
-        {
-          DBTime += 50;
-          PORTB ^= B00100000; // Переключить 13 порт
-        }
-#endif
       }
       l_vib = 0;
     }
@@ -442,16 +440,12 @@ void loop()
 void left_vibr()
 {
   ++l_vib;
-#ifdef MY_DEBUG_LED
-  PORTB ^= B00100000; // Переключить 13 порт
-#endif
+
   timer_l_vibr = millis();
 }
 void right_vibr()
 {
   ++r_vib;
-#ifdef MY_DEBUG_LED
-  PORTB ^= B00100000; // Переключить 13 порт
-#endif
+
   timer_r_vibr = millis();
 }
