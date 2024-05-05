@@ -260,7 +260,7 @@ void loop()
         goto stop1;
       }
       // if (received.address < device_id)
-      SendTimer = uint16_t(millis() - (SEND_DELAY / 20) * ((10 - device_id + 1) * 2));
+      SendTimer = uint16_t(millis() - (SEND_DELAY / 20) * ((10 - device_id + 1) * 2) + (SEND_DELAY / 20));
       // else
       // SendTimer = uint16_t(millis() + SEND_DELAY - ((SEND_DELAY / 20) * ((received.address - device_id) * 2 + 1)));
 
@@ -300,7 +300,7 @@ void loop()
       {
         if (received.address == uint8_t(device_id + 1))
         {
-          DD("INIT_ANSWER -<");
+          DD("INIT_ANSWER <-");
           if (!initSent)
           {
             devices_count++;
@@ -327,9 +327,9 @@ void loop()
         if (received.address == uint8_t(device_id - 1))
         {
           synchronized = uint16_t(millis());
-
+          syncRequested = 1;
           blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
-          DD("Sync completed");
+          DD("SYNC_COMMAND <-");
           SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
           // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
           // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
