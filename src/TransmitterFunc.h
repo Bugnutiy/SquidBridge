@@ -4,8 +4,8 @@
 #include <IRremote.hpp>
 #include <MemoryFree.h>
 
-#define SEND_DELAY 400
-#define SEND_DELAY_2 1000
+#define SEND_DELAY 800
+#define SEND_DELAY_2 SEND_DELAY*2
 
 #pragma pack(push, 1)
 
