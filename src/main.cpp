@@ -12,9 +12,9 @@
 #define DEKAY 15
 
 #define BRIGHTNESS_MAX 255 // 10..255
-#define WAWE_IN 100
-#define WAWE_FULL 500
-#define WAWE_OUT 400
+#define WAWE_IN 200
+#define WAWE_FULL 0
+#define WAWE_OUT 1000
 #define WAWE_MIN 4000
 #define WAWE_MIN_BRIGHT 100
 #define WAWE_MAX_BRIGHT 255
@@ -33,7 +33,7 @@
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
 #define PATTERN_CHANGE_TIME 20000
-#define INIT_TIME 10000
+#define INIT_TIME 5000
 
 #define COLOR_DEBTH 1
 
@@ -70,7 +70,7 @@ uint32_t patternChangeTimer = 0;
 bool initSender = 0, initSent = 0;
 
 bool syncRequested = 0;
-uint16_t synchronized = 0;
+uint32_t synchronized = 0;
 void setup()
 {
 #ifdef MY_DEBUG
@@ -332,7 +332,7 @@ void loop()
       {
         if (received.address < uint16_t(device_id))
         {
-          synchronized = uint16_t(millis());
+          synchronized = millis() + (WAWE_IN + WAWE_FULL) * (device_id - received.address - 1);
           if (device_id != device_next)
             syncRequested = 1;
           // blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
@@ -457,9 +457,9 @@ void loop()
       // DD("Send Sync Command:");
     }
     SendData();
-    if (device_id == device_next)
+    if (device_id == 1 && device_id != device_next)
     {
-      TMR16(20000, {syncRequested = 1;});
+      TMR16(20000, { syncRequested = 1; });
     }
     if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
     {
@@ -477,8 +477,8 @@ void loop()
       while (blinkL(l_led, pattern ? mRed : mLime, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
       }
-      if (device_id > 1)
-        synchronized = 0;
+      // if (device_id > 1)
+      //   synchronized = 0;
       r_vib = 0;
     }
     if (r_vib > VIBRATOR_RIGHT_SENS)
@@ -486,8 +486,8 @@ void loop()
       while (blinkR(r_led, pattern ? mLime : mRed, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
       {
       }
-      if (device_id > 1)
-        synchronized = 0;
+      // if (device_id > 1)
+      //   synchronized = 0;
       l_vib = 0;
     }
   }
