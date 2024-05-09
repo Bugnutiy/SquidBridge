@@ -9,7 +9,7 @@
 
 #define LEFT_PIN 7  // пин L-ленты
 #define RIGHT_PIN 8 // пин R-ленты
-#define DEKAY 15
+#define DEKAY 1
 
 #define BRIGHTNESS_MAX 255 // 10..255
 #define WAWE_IN 200
@@ -140,8 +140,8 @@ void setup()
         device_id = received.address + 1;
         device_next = device_id;
         SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
         goto stop;
       }
       if (received == IrData{CARMP3::address, CARMP3::btn_1})
@@ -313,6 +313,7 @@ void loop()
           }
           initSent = 1;
           initSender = 0;
+          syncRequired = 1;
           DD_LED((device_next));
         }
       }
@@ -331,30 +332,28 @@ void loop()
       case STD_COMMANDS::SYNC_COMMAND:
       {
         TMR16(1000, {
-          if (received.address < uint16_t(device_id))
+          if (received.address == uint16_t(device_id - 1))
           {
-            synchronized = millis() + (WAWE_IN + WAWE_FULL) * (device_id - received.address - 1) - WAWE_FULL/2;
+            synchronized = millis() - WAWE_FULL / 2;
             if (device_id != device_next)
               syncRequired = 1;
             // blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
             DD("SYNC_COMMAND <-");
-            SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
-            // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
             // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
           }
         });
       }
       break;
 
-      case STD_COMMANDS::SYNC_ANSWER:
-      {
-        if (received.address == uint8_t(device_id + 1))
-        {
-          DD("SYNC_ANSWER <-");
-          syncRequired = 0;
-        }
-      }
-      break;
+        // case STD_COMMANDS::SYNC_ANSWER:
+        // {
+        //   if (received.address == uint8_t(device_id + 1))
+        //   {
+        //     DD("SYNC_ANSWER <-");
+        //     syncRequired = 0;
+        //   }
+        // }
+        // break;
 
       case CARMP3::btn_CH_minus: // Change pattern
       {
@@ -455,6 +454,8 @@ void loop()
       {
         DD("SYNC_COMMAND ->");
         SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
+        SendData();
+        syncRequired = 0;
       }
       // DD("Send Sync Command:");
     }

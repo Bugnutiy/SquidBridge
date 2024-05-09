@@ -36,7 +36,7 @@ namespace STD_COMMANDS
     
     const uint8_t SYNC_REQUEST = 4;
     const uint8_t SYNC_COMMAND = 5;
-    const uint8_t SYNC_ANSWER = 6;
+    // const uint8_t SYNC_ANSWER = 6;
 
     const uint8_t CHANGE_PATTERN = 10;
 }
