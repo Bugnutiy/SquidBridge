@@ -13,7 +13,7 @@
 
 #define BRIGHTNESS_MAX 255 // 10..255
 #define WAWE_IN 200
-#define WAWE_FULL 0
+#define WAWE_FULL 100
 #define WAWE_OUT 1000
 #define WAWE_MIN 4000
 #define WAWE_MIN_BRIGHT 100
@@ -69,7 +69,7 @@ uint32_t patternChangeTimer = 0;
 
 bool initSender = 0, initSent = 0;
 
-bool syncRequested = 0;
+bool syncRequired = 0;
 uint32_t synchronized = 0;
 void setup()
 {
@@ -266,7 +266,7 @@ void loop()
         goto stop1;
       }
       // if (received.address < device_id)
-      SendTimer = uint16_t(millis() - (SEND_DELAY / 20) * ((10 - device_id + 1) * 2) + (SEND_DELAY / 20));
+      SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id + 1));
       // else
       // SendTimer = uint16_t(millis() + SEND_DELAY - ((SEND_DELAY / 20) * ((received.address - device_id) * 2 + 1)));
 
@@ -323,24 +323,26 @@ void loop()
         if (received.address == uint8_t(device_id + 1))
         {
           DD("SYNC_REQUEST <-");
-          syncRequested = 1;
+          syncRequired = 1;
         }
       }
       break;
 
       case STD_COMMANDS::SYNC_COMMAND:
       {
-        if (received.address < uint16_t(device_id))
-        {
-          synchronized = millis() + (WAWE_IN + WAWE_FULL) * (device_id - received.address - 1);
-          if (device_id != device_next)
-            syncRequested = 1;
-          // blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
-          DD("SYNC_COMMAND <-");
-          SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
-          // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
-          // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
-        }
+        TMR16(1000, {
+          if (received.address < uint16_t(device_id))
+          {
+            synchronized = millis() + (WAWE_IN + WAWE_FULL) * (device_id - received.address - 1) - WAWE_FULL/2;
+            if (device_id != device_next)
+              syncRequired = 1;
+            // blinkSync(l_led, r_led, mAqua, 1, 200, 0, 200, 4600, 50, 255, DEKAY, 1, 0);
+            DD("SYNC_COMMAND <-");
+            SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
+            // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
+            // SendDataAdd(device_id, STD_COMMANDS::SYNC_ANSWER);
+          }
+        });
       }
       break;
 
@@ -349,7 +351,7 @@ void loop()
         if (received.address == uint8_t(device_id + 1))
         {
           DD("SYNC_ANSWER <-");
-          syncRequested = 0;
+          syncRequired = 0;
         }
       }
       break;
@@ -438,7 +440,7 @@ void loop()
 
     if (!synchronized && device_id > 1)
     {
-      TMR16(5000, {
+      TMR16(1000, {
         if (SendData())
         {
           DD("SYNC_REQUEST ->");
@@ -447,9 +449,9 @@ void loop()
       });
     }
 
-    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, DEKAY, 1) == WAWE_IN + WAWE_FULL)
+    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, DEKAY, 1) == WAWE_IN + WAWE_FULL / 2)
     {
-      if (syncRequested && synchronized && SendData())
+      if (syncRequired && synchronized && SendData())
       {
         DD("SYNC_COMMAND ->");
         SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
@@ -459,7 +461,7 @@ void loop()
     SendData();
     if (device_id == 1 && device_id != device_next)
     {
-      TMR16(20000, { syncRequested = 1; });
+      TMR16(20000, { syncRequired = 1; });
     }
     if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
     {
