@@ -555,79 +555,204 @@ void SHOW_NUM(R_INIT &rled, L_INIT &lled, uint8_t number, mData color, mData bg_
   SHOW_NUM_R(rled, number % 10, color, bg_color, show, bg_show);
 }
 
-uint32_t WAWE_SYNC(R_INIT &rled, L_INIT &lled, mData color, uint16_t T_fade_in, uint16_t T_full_bright, uint16_t T_fade_out, uint16_t T_min_bright, uint8_t min_bright, uint8_t max_bright, const uint32_t &sync_time, uint8_t dekay = 15, bool show = 1)
+// uint32_t WAWE_SYNC(R_INIT &rled, L_INIT &lled, mData color, uint16_t T_fade_in, uint16_t T_full_bright, uint16_t T_fade_out, uint16_t T_min_bright, uint8_t min_bright, uint8_t max_bright, const uint32_t &sync_time, uint8_t dekay = 15, bool show = 1)
+// {
+//   uint16_t Timing = uint16_t(millis() - sync_time) % (T_fade_in + T_full_bright + T_fade_out + T_min_bright);
+//   uint8_t Stage;
+//   uint16_t T_Remaining;
+//   static uint8_t Brightness = min_bright;
+//   if (Timing <= T_fade_in)
+//   {
+//     Stage = 0;
+//     T_Remaining = T_fade_in - Timing;
+//   }
+//   else if (Timing <= T_fade_in + T_full_bright)
+//   {
+//     Stage = 1;
+//     T_Remaining = T_fade_in + T_full_bright - Timing;
+//   }
+//   else if (Timing <= T_fade_in + T_full_bright + T_fade_out)
+//   {
+//     Stage = 2;
+//     T_Remaining = T_fade_in + T_full_bright + T_fade_out - Timing;
+//   }
+//   else if (Timing <= T_fade_in + T_full_bright + T_fade_out + T_min_bright)
+//   {
+//     Stage = 3;
+//     T_Remaining = T_fade_in + T_full_bright + T_fade_out + T_min_bright - Timing;
+//   }
+//   switch (Stage)
+//   {
+//   case 0: // Fade in
+//     uint8_t dekay1 = dekay;
+//     uint16_t BT = (Brightness - min_bright) / T1 * dekay1;
+//     // DD(BT, 1000);
+//     if (BT == 0)
+//     {
+//       BT = 1;
+//       dekay1 = T1 / (Br_max - Br_min);
+//     }
+//     uint16_t T = (uint16_t)(millis() - TT1);
+//     if (T >= dekay1)
+//     {
+//       TT1 = millis();
+//       BR += BT;
+//       if (BR > Br_max)
+//         BR = Br_max;
+//       l_led.setBrightness(BR);
+//       r_led.setBrightness(BR);
+//       if (Show)
+//       {
+//         l_led.show();
+//         r_led.show();
+//       }
+//     }
+//     if (BR >= Br_max)
+//     {
+//       worker++;
+//       TT2 = millis();
+//     }
+//     break;
+//   case 1:
+//     break;
+//   case 2:
+//     break;
+//   case 3:
+//     break;
+//   default:
+//     break;
+//   }
+//   return Stage * 10 + T_Remaining;
+// }
+
+/**
+ * @brief Synchronized wave effect for two LED strips.
+ *
+ * This function simulates a synchronized wave effect on two LED strips. It gradually fades in, maintains full brightness, and gradually fades out the LED strips.
+ *
+ * @param rled Right LED strip.
+ * @param lled Left LED strip.
+ * @param color Color of the wave effect.
+ * @param T_fade_in Duration of the fade-in phase in milliseconds.
+ * @param T_full_bright Duration of the full brightness phase in milliseconds.
+ * @param T_fade_out Duration of the fade-out phase in milliseconds.
+ * @param T_min_bright Duration of the minimum brightness phase in milliseconds.
+ * @param min_bright Minimum brightness level.
+ * @param max_bright Maximum brightness level.
+ * @param sync_time Synchronization time in milliseconds.
+ * @param dekay Delay between brightness steps.
+ * @param show Whether to show the LED strips after setting the brightness.
+ *
+ * @return The current timing of the wave effect in milliseconds.
+ */
+uint16_t WAWE_SYNC(R_INIT &rled, L_INIT &lled, mData color, uint16_t T_fade_in, uint16_t T_full_bright, uint16_t T_fade_out, uint16_t T_min_bright, uint8_t min_bright, uint8_t max_bright, const uint32_t &sync_time, uint8_t dekay = 15, bool show = 1)
 {
-  uint16_t Timing = uint16_t(millis() - sync_time) % (T_fade_in + T_full_bright + T_fade_out + T_min_bright);
-  uint8_t Stage;
-  uint16_t T_Remaining;
-  static uint8_t Brightness = min_bright;
+  uint16_t Sequence = T_fade_in + T_full_bright + T_fade_out + T_min_bright;
+  uint16_t Timing = uint16_t(millis() - sync_time) % Sequence;
+  static uint8_t Brightness;
+  static bool flag_in = 0, flag_out = 0;
 
-  if (Timing <= T_fade_in)
+  if (Timing < T_fade_in)
   {
-    Stage = 0;
-    T_Remaining = T_fade_in - Timing;
-  }
-  else if (Timing <= T_fade_in + T_full_bright)
-  {
-    Stage = 1;
-    T_Remaining = T_fade_in + T_full_bright - Timing;
-  }
-  else if (Timing <= T_fade_in + T_full_bright + T_fade_out)
-  {
-    Stage = 2;
-    T_Remaining = T_fade_in + T_full_bright + T_fade_out - Timing;
-  }
-  else if (Timing <= T_fade_in + T_full_bright + T_fade_out + T_min_bright)
-  {
-    Stage = 3;
-    T_Remaining = T_fade_in + T_full_bright + T_fade_out + T_min_bright - Timing;
-  }
-  switch (Stage)
-  {
-  case 0: // Fade in
-    uint8_t dekay1 = dekay;
-    uint16_t BT = (Brightness - min_bright) / T1 * dekay1;
-    // DD(BT, 1000);
-    if (BT == 0)
+    // Fade in
+    uint8_t dekay_in = dekay;
+    uint16_t brightness_step;
+    if (T_fade_in)
+      brightness_step = (max_bright - min_bright) / T_fade_in * dekay_in;
+    else
     {
-      BT = 1;
-      dekay1 = T1 / (Br_max - Br_min);
+      brightness_step = max_bright - min_bright;
+      dekay_in = 0;
     }
-    uint16_t T = (uint16_t)(millis() - TT1);
-    if (T >= dekay1)
+    if (brightness_step > (uint16_t(max_bright) - min_bright))
     {
-      TT1 = millis();
-      BR += BT;
-      if (BR > Br_max)
-        BR = Br_max;
-      l_led.setBrightness(BR);
-      r_led.setBrightness(BR);
-
-      if (Show)
+      brightness_step = max_bright - min_bright;
+      dekay_in = 0;
+    }
+    if (brightness_step == 0)
+    {
+      brightness_step = 1;
+      dekay_in = T_fade_in / (max_bright - min_bright);
+    }
+    static uint16_t timer;
+    if (flag_in)
+    {
+      timer = 0;
+      flag_in = 0;
+    }
+    if (Timing - timer >= dekay_in)
+    {
+      timer += dekay_in;
+      if (uint16_t(Brightness) + uint16_t(brightness_step) < max_bright)
+        Brightness += brightness_step;
+      else
       {
-        l_led.show();
-        r_led.show();
+        Brightness = max_bright;
       }
     }
-    if (BR >= Br_max)
-    {
-      worker++;
-      TT2 = millis();
-    }
-    break;
-  case 1:
-
-    break;
-
-  case 2:
-
-    break;
-
-  case 3:
-
-    break;
-  default:
-    break;
   }
-  return Stage * 10 + T_Remaining;
+  else if (Timing < T_fade_in + T_full_bright)
+  {
+    // Full brightness
+    Brightness = max_bright;
+    flag_out = 1;
+  }
+  else if (Timing < T_fade_in + T_full_bright + T_fade_out)
+  {
+    // Fade out
+    uint8_t dekay_out = dekay;
+    uint16_t brightness_step;
+    if (T_fade_out)
+      brightness_step = (max_bright - min_bright) / T_fade_out * dekay_out;
+    else
+    {
+      brightness_step = max_bright - min_bright;
+      dekay_out = 0;
+    }
+
+    if (brightness_step > (uint16_t(max_bright) - min_bright))
+    {
+      brightness_step = max_bright - min_bright;
+      dekay_out = 0;
+    }
+    if (brightness_step == 0)
+    {
+      brightness_step = 1;
+      dekay_out = T_fade_out / (max_bright - min_bright);
+    }
+    static uint16_t timer;
+    if (flag_out)
+    {
+      timer = T_fade_in + T_full_bright;
+      flag_out = 0;
+    }
+    if (Timing - timer >= dekay_out)
+    {
+      timer += dekay_out;
+      if (uint16_t(Brightness) - uint16_t(brightness_step) > min_bright)
+        Brightness -= brightness_step;
+      else
+      {
+        Brightness = min_bright;
+      }
+    }
+  }
+  else
+  {
+    // Minimum brightness
+    Brightness = min_bright;
+    flag_in = 1;
+  }
+
+  lled.fill(color);
+  rled.fill(color);
+  lled.setBrightness(Brightness);
+  rled.setBrightness(Brightness);
+  if (show)
+  {
+    lled.show();
+    rled.show();
+  }
+
+  return Timing;
 }
