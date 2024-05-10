@@ -645,7 +645,7 @@ void SHOW_NUM(R_INIT &rled, L_INIT &lled, uint8_t number, mData color, mData bg_
  *
  * @return The current timing of the wave effect in milliseconds.
  */
-uint16_t WAWE_SYNC(R_INIT &rled, L_INIT &lled, mData color, uint16_t T_fade_in, uint16_t T_full_bright, uint16_t T_fade_out, uint16_t T_min_bright, uint8_t min_bright, uint8_t max_bright, const uint32_t &sync_time, uint8_t dekay = 15, bool show = 1)
+uint16_t WAWE_SYNC(R_INIT &rled, L_INIT &lled, mData color, uint16_t T_fade_in, uint16_t T_full_bright, uint16_t T_fade_out, uint16_t T_min_bright, uint8_t min_bright, uint8_t max_bright, const uint32_t &sync_time, bool show = 1)
 {
   uint16_t Sequence = T_fade_in + T_full_bright + T_fade_out + T_min_bright;
   uint16_t Timing = (millis() - sync_time) % Sequence;

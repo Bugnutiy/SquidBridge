@@ -19,6 +19,24 @@
 #define WAWE_MIN_BRIGHT 100
 #define WAWE_MAX_BRIGHT 255
 
+#define BLINK_N 1
+#define BLINK_IN 100
+#define BLINK_FULL 1000
+#define BLINK_OUT 100
+#define BLINK_MIN 0
+#define BLINK_MIN_BRIGHT 100
+#define BLINK_MAX_BRIGHT 255
+
+#define SHOW_BLINK_N 1
+#define SHOW_BLINK_IN 100
+#define SHOW_BLINK_FULL 1000
+#define SHOW_BLINK_OUT 100
+#define SHOW_BLINK_MIN 0
+#define SHOW_BLINK_MIN_BRIGHT 100
+#define SHOW_BLINK_MAX_BRIGHT 255
+
+#define SHOW_PATTERN_TIMER 5000
+
 #define VIBRATOR_LEFT 0 // 0=2 Прерывания датчиков вибрации
 #define VIBRATOR_LEFT_PIN 2
 #define VIBRATOR_RIGHT 1 // 1=3
@@ -144,84 +162,16 @@ void setup()
         // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
         goto stop;
       }
-      if (received == IrData{CARMP3::address, CARMP3::btn_1})
+      if (received.address == CARMP3::address)
       {
-        DD("INIT_RECIEVED REMOTE 1");
-        flag = 0;
-        device_id = 1;
-        device_next = 1;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_2})
-      {
-        DD("INIT_RECIEVED REMOTE 2");
-        flag = 0;
-        device_id = 2;
-        device_next = 2;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_3})
-      {
-        DD("INIT_RECIEVED REMOTE 3");
-        flag = 0;
-        device_id = 3;
-        device_next = 3;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_4})
-      {
-        DD("INIT_RECIEVED REMOTE 4");
-        flag = 0;
-        device_id = 4;
-        device_next = 4;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_5})
-      {
-        DD("INIT_RECIEVED REMOTE 5");
-        flag = 0;
-        device_id = 5;
-        device_next = 5;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_6})
-      {
-        DD("INIT_RECIEVED REMOTE 6");
-        flag = 0;
-        device_id = 6;
-        device_next = 6;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_7})
-      {
-        DD("INIT_RECIEVED REMOTE 7");
-        flag = 0;
-        device_id = 7;
-        device_next = 7;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_8})
-      {
-        DD("INIT_RECIEVED REMOTE 8");
-        flag = 0;
-        device_id = 8;
-        device_next = 8;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_9})
-      {
-        DD("INIT_RECIEVED REMOTE 9");
-        flag = 0;
-        device_id = 9;
-        device_next = 9;
-        goto stop;
-      }
-      if (received == IrData{CARMP3::address, CARMP3::btn_0})
-      {
-        DD("INIT_RECIEVED REMOTE 10");
-        flag = 0;
-        device_id = 10;
-        device_next = 10;
+        if (CARMP3_NUM(received.command) < 255)
+        {
+          flag = 0;
+          device_id = CARMP3_NUM(received.command);
+          if (!device_id)
+            device_id = 10;
+          device_next = device_id;
+        }
       }
     stop:
       IrReceiver.resume();
@@ -355,6 +305,35 @@ void loop()
         // }
         // break;
 
+      case STD_COMMANDS::CHANGE_PATTERN:
+      {
+        if (received.address < device_id)
+        {
+          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+          {
+            pattern_number++;
+            if (pattern_number < PATTERNS_COUNT && device_id <= 10)
+              pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+            else
+              pattern = random(2147483647) % 2;
+            while (blinkSync(l_led, r_led, mPurple, 1, 200, 200, 200, 0, 0, 255, DEKAY, 0))
+            {
+              SHOW_NUM(r_led, l_led, pattern_number, mPurple);
+            }
+            DDD("Pattern changed: ");
+            DD(pattern);
+            DDD("Pattern number:");
+            DD(pattern_number);
+            patternChangeTimer = millis();
+          }
+          DD("Pattern change-request sending");
+          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+        }
+      }
+      break;
+
       case CARMP3::btn_CH_minus: // Change pattern
       {
         if (received.address == CARMP3::address)
@@ -390,35 +369,40 @@ void loop()
           break;
       }
 
-      case STD_COMMANDS::CHANGE_PATTERN:
+      case CARMP3::btn_CH: // Show pattern locally
       {
-        if (received.address < device_id)
+        if (received.address == CARMP3::address)
         {
-          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+          while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
           {
-            pattern_number++;
-            if (pattern_number < PATTERNS_COUNT && device_id <= 10)
-              pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
-            else
-              pattern = random(2147483647) % 2;
-            while (blinkSync(l_led, r_led, mPurple, 1, 200, 200, 200, 0, 0, 255, DEKAY, 0))
-            {
-              SHOW_NUM(r_led, l_led, pattern_number, mPurple);
-            }
-            DDD("Pattern changed: ");
-            DD(pattern);
-            DDD("Pattern number:");
-            DD(pattern_number);
-            patternChangeTimer = millis();
+            blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
           }
-          DD("Pattern change-request sending");
-          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
         }
       }
       break;
-
+      case CARMP3::btn_CH_plus: // Show pattern global
+      {
+        if (received.address != CARMP3::address)
+          break;
+      }
+      case STD_COMMANDS::SHOW_PATTERN:
+      {
+        if (received.address != device_id || received.address == CARMP3::address)
+          TMR16(SHOW_PATTERN_TIMER, {
+            while (!SendData())
+              ;
+            SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+            SendData();
+            while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
+            {
+              blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+            }
+          });
+      }
+      break;
+      case CARMP3::btn_PLAY:
+        workerMain = 1;
+        break;
       default:
         break;
       }
@@ -448,7 +432,7 @@ void loop()
       });
     }
 
-    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, DEKAY, 1) == WAWE_IN + WAWE_FULL / 2)
+    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, 1) == WAWE_IN + WAWE_FULL / 2)
     {
       if (syncRequired && synchronized && SendData())
       {
@@ -477,7 +461,7 @@ void loop()
 
     if (l_vib > VIBRATOR_LEFT_SENS)
     {
-      while (blinkL(l_led, pattern ? mRed : mLime, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
+      while (blinkL(l_led, pattern ? mRed : mLime, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
       {
       }
       // if (device_id > 1)
@@ -486,13 +470,18 @@ void loop()
     }
     if (r_vib > VIBRATOR_RIGHT_SENS)
     {
-      while (blinkR(r_led, pattern ? mLime : mRed, 1, 100, 1000, 100, 0, 0, 255, DEKAY, 1))
+      while (blinkR(r_led, pattern ? mLime : mRed, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
       {
       }
       // if (device_id > 1)
       //   synchronized = 0;
       l_vib = 0;
     }
+  }
+  break;
+  case 1:
+  {
+    
   }
   break;
   default:

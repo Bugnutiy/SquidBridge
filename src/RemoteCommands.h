@@ -27,18 +27,63 @@ namespace CARMP3
     const uint8_t btn_100 = 25;
     const uint8_t btn_200 = 13;
 }
-
+uint8_t CARMP3_NUM(const uint8_t &COMMAND)
+{
+    switch (COMMAND)
+    {
+    case CARMP3::btn_0:
+        return 0;
+        break;
+    case CARMP3::btn_1:
+        return 1;
+        break;
+    case CARMP3::btn_2:
+        return 2;
+        break;
+    case CARMP3::btn_3:
+        return 3;
+        break;
+    case CARMP3::btn_4:
+        return 4;
+        break;
+    case CARMP3::btn_5:
+        return 5;
+        break;
+    case CARMP3::btn_6:
+        return 6;
+        break;
+    case CARMP3::btn_7:
+        return 7;
+        break;
+    case CARMP3::btn_8:
+        return 8;
+        break;
+    case CARMP3::btn_9:
+        return 9;
+        break;
+    case CARMP3::btn_100:
+        return 100;
+        break;
+    case CARMP3::btn_200:
+        return 200;
+        break;
+    default:
+        return 255;
+        break;
+    }
+}
 namespace STD_COMMANDS
 {
     const uint8_t INIT_REQUEST = 1;
     const uint8_t INIT_COMMAND = 2;
     const uint8_t INIT_ANSWER = 3;
-    
+
     const uint8_t SYNC_REQUEST = 4;
     const uint8_t SYNC_COMMAND = 5;
     // const uint8_t SYNC_ANSWER = 6;
 
     const uint8_t CHANGE_PATTERN = 10;
+    const uint8_t SHOW_PATTERN = 11;
 }
 
 // class LGM
