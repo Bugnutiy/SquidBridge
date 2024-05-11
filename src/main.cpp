@@ -15,25 +15,25 @@
 #define WAWE_IN 200
 #define WAWE_FULL 100
 #define WAWE_OUT 1000
-#define WAWE_MIN 4000
-#define WAWE_MIN_BRIGHT 100
-#define WAWE_MAX_BRIGHT 255
+#define WAWE_minimal 4000
+#define WAWE_minimal_BRIGHT 100
+#define WAWE_maximal_BRIGHT 255
 
 #define BLINK_N 1
 #define BLINK_IN 100
 #define BLINK_FULL 1000
 #define BLINK_OUT 100
-#define BLINK_MIN 0
-#define BLINK_MIN_BRIGHT 100
-#define BLINK_MAX_BRIGHT 255
+#define BLINK_minimal 0
+#define BLINK_minimal_BRIGHT 100
+#define BLINK_maximal_BRIGHT 255
 
 #define SHOW_BLINK_N 1
 #define SHOW_BLINK_IN 100
 #define SHOW_BLINK_FULL 1000
 #define SHOW_BLINK_OUT 100
-#define SHOW_BLINK_MIN 0
-#define SHOW_BLINK_MIN_BRIGHT 100
-#define SHOW_BLINK_MAX_BRIGHT 255
+#define SHOW_BLINK_minimal 0
+#define SHOW_BLINK_minimal_BRIGHT 100
+#define SHOW_BLINK_maximal_BRIGHT 255
 
 #define SHOW_PATTERN_TIMER 5000
 
@@ -77,6 +77,7 @@ void right_vibr();
 bool pattern = 0;
 #include "LedFunc.h"
 #include "TransmitterFunc.h"
+#include "Randomizer.h"
 
 IrData received;
 uint8_t device_id = 255, device_next = 1;
@@ -373,9 +374,9 @@ void loop()
       {
         if (received.address == CARMP3::address)
         {
-          while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
+          while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_minimal, SHOW_BLINK_minimal_BRIGHT, SHOW_BLINK_maximal_BRIGHT, DEKAY, 1))
           {
-            blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+            blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_minimal, SHOW_BLINK_minimal_BRIGHT, SHOW_BLINK_maximal_BRIGHT, DEKAY, 1);
           }
         }
       }
@@ -393,16 +394,21 @@ void loop()
               ;
             SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
             SendData();
-            while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
+            while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_minimal, SHOW_BLINK_minimal_BRIGHT, SHOW_BLINK_maximal_BRIGHT, DEKAY, 1))
             {
-              blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+              blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_minimal, SHOW_BLINK_minimal_BRIGHT, SHOW_BLINK_maximal_BRIGHT, DEKAY, 1);
             }
           });
       }
       break;
       case CARMP3::btn_PLAY:
-        workerMain = 1;
-        break;
+      {
+        if (received.address == CARMP3::address && device_id == device_next)
+        {
+          workerMain = 1;
+        }
+      }
+      break;
       default:
         break;
       }
@@ -432,7 +438,7 @@ void loop()
       });
     }
 
-    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, 1) == WAWE_IN + WAWE_FULL / 2)
+    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_minimal, WAWE_minimal_BRIGHT, WAWE_maximal_BRIGHT, synchronized, 1) == WAWE_IN + WAWE_FULL / 2)
     {
       if (syncRequired && synchronized && SendData())
       {
@@ -461,7 +467,7 @@ void loop()
 
     if (l_vib > VIBRATOR_LEFT_SENS)
     {
-      while (blinkL(l_led, pattern ? mRed : mLime, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+      while (blinkL(l_led, pattern ? mRed : mLime, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_minimal, BLINK_minimal_BRIGHT, BLINK_maximal_BRIGHT, DEKAY, 1))
       {
       }
       // if (device_id > 1)
@@ -470,7 +476,7 @@ void loop()
     }
     if (r_vib > VIBRATOR_RIGHT_SENS)
     {
-      while (blinkR(r_led, pattern ? mLime : mRed, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+      while (blinkR(r_led, pattern ? mLime : mRed, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_minimal, BLINK_minimal_BRIGHT, BLINK_maximal_BRIGHT, DEKAY, 1))
       {
       }
       // if (device_id > 1)
@@ -481,7 +487,137 @@ void loop()
   break;
   case 1:
   {
-    
+    static uint8_t minimal = 0, maximal = 0;
+    static uint8_t mode = 0;
+    while (mode == 0)
+    {
+      if (!minimal)
+      {
+        TMR16(1000, {
+          static bool f1 = 0;
+          f1 = !f1;
+          r_led.fill(mBlack);
+          l_led.fill(mBlack);
+          r_led.fill(0, 2, f1 ? mRed : mBlack);
+          l_led.fill(6, 8, f1 ? mRed : mBlack);
+          r_led.fill(0, 2, f1 ? mRed : mBlack);
+          l_led.fill(6, 8, f1 ? mRed : mBlack);
+          r_led.show();
+          l_led.show();
+        });
+      }
+      else
+      {
+        l_led.setBrightness(BRIGHTNESS_MAX);
+        r_led.setBrightness(BRIGHTNESS_MAX);
+        SHOW_NUM(r_led, l_led, minimal, mRed);
+      }
+      if (IrReceiver.decode())
+      {
+        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+        if (received.address == CARMP3::address)
+        {
+          if (received.command == CARMP3::btn_PLAY && minimal > 0)
+          {
+            mode = 1;
+          }
+          else
+          {
+            TMR16(100, {
+              uint8_t digit = CARMP3_NUM(received.command);
+              if (digit < 10)
+              {
+                minimal = (uint16_t(minimal) * 10) % 100 + digit;
+              }
+            });
+          }
+        }
+        IrReceiver.resume();
+      }
+    }
+    while (mode == 1)
+    {
+      if (!maximal)
+      {
+        TMR16(500, {
+          static bool f1 = 0;
+          f1 = !f1;
+          r_led.fill(mBlack);
+          l_led.fill(mBlack);
+          r_led.fill(0, 2, f1 ? mRed : mBlack);
+          l_led.fill(6, 8, f1 ? mRed : mBlack);
+          r_led.fill(0, 2, f1 ? mRed : mBlack);
+          l_led.fill(6, 8, f1 ? mRed : mBlack);
+          r_led.show();
+          l_led.show();
+        });
+      }
+      else
+      {
+        SHOW_NUM(r_led, l_led, maximal, mRed);
+      }
+      if (IrReceiver.decode())
+      {
+        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+        if (received.address == CARMP3::address)
+        {
+          if (received.command == CARMP3::btn_PLAY && maximal > 0)
+          {
+            mode = 2;
+          }
+          else
+          {
+            TMR16(100, {
+              uint8_t digit = CARMP3_NUM(received.command);
+              if (digit < 10)
+              {
+                maximal = (uint16_t(maximal) * 10) % 100 + digit;
+              }
+            });
+          }
+        }
+        IrReceiver.resume();
+      }
+    }
+    while (mode == 2)
+    {
+      Randomizer *randomizer = new Randomizer;
+      if (randomizer->init(minimal, maximal))
+      {
+        uint8_t i = 0;
+        while (i < randomizer->PlayersList.size())
+        {
+          TMR8(200, { SHOW_NUM(r_led, l_led, randomizer->PlayersList[i], mRed); });
+
+          if (IrReceiver.decode())
+          {
+            received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+
+            TMR16(100, {
+              switch (received.command)
+              {
+              case CARMP3::btn_NEXT:
+                i++;
+                break;
+              case CARMP3::btn_PREV:
+                i--;
+              default:
+                break;
+              }
+            });
+            IrReceiver.resume();
+          }
+          if (i == 255)
+            i = 0;
+        }
+      }
+
+      mode = 0;
+      workerMain = 0;
+      minimal = 0;
+      maximal = 0;
+      delete randomizer;
+    }
   }
   break;
   default:

@@ -13,7 +13,7 @@ private:
 public:
     QList<uint8_t> PlayersList;
     Randomizer();
-    bool init(uint8_t &min, uint8_t &max);
+    bool init(uint8_t &minimal, uint8_t &maximal);
     ~Randomizer();
 };
 
@@ -21,16 +21,16 @@ Randomizer::Randomizer()
 {
 }
 
-bool Randomizer::init(uint8_t &min, uint8_t &max)
+bool Randomizer::init(uint8_t &minimal, uint8_t &maximal)
 {
     randomSeed(analogRead(A0));
-    for (uint8_t i = 0; i < max - min; i++)
+    for (uint8_t i = 0; i < maximal - minimal+1; i++)
     {
         bool flag = true;
         uint8_t tmp;
         while (flag)
         {
-            tmp = random(min, max + 1);
+            tmp = random(minimal, maximal + 1);
             flag = false;
             for (uint8_t j = 0; j < PlayersList.size(); j++)
             {
@@ -43,6 +43,8 @@ bool Randomizer::init(uint8_t &min, uint8_t &max)
         else
             return false;
     }
+    DDD("Size of players list:");
+    DD(PlayersList.size());
     return true;
 }
 Randomizer::~Randomizer()
