@@ -7,7 +7,10 @@
 #include "My_Debug.h"
 #define L_INIT microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS>
 #define R_INIT microLED<NUMLEDS, RIGHT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS>
-mData prev_color = mBlack;
+
+mData prev_colorL = mBlack;
+mData prev_colorR = mBlack;
+mData prev_colorS = mBlack;
 
 /// @brief
 /// @param led Управляющая светодиодов
@@ -28,7 +31,7 @@ uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   static uint8_t worker = 0, i = 0;
   static int32_t BR = 0;
 
-  if (prev_color != color)
+  if (prev_colorL != color)
   {
     // DDD("R: ");
     // DD(color.r);
@@ -36,9 +39,10 @@ uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
     // DD(color.g);
     // DDD("B: ");
     // DD(color.b);
-    prev_color = color;
+    prev_colorL = color;
     worker = 0;
   }
+  led.fill(color);
 
   switch (worker)
   {
@@ -47,7 +51,6 @@ uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
     worker = 1;
     i = 0;
     // TT1 = millis() - 1;
-    led.fill(color);
     led.setBrightness(Br_min);
     BR = Br_min;
     if (Show)
@@ -85,7 +88,6 @@ uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   }
   case 2: // полная яркость
   {
-    DD(2);
     if (T2)
     {
       if ((uint16_t)(millis() - TT2) >= T2)
@@ -105,7 +107,6 @@ uint8_t blinkL(L_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   }
   case 3: // fade-out
   {
-    DD(3, 1000);
     uint8_t dekay3 = dekay;
     uint16_t BT = (Br_max - Br_min) / T3 * dekay3;
     if (BT == 0)
@@ -176,7 +177,7 @@ uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   static uint8_t worker = 0, i = 0;
   static int32_t BR = 0;
 
-  if (prev_color != color)
+  if (prev_colorR != color)
   {
     // DDD("R: ");
     // DD(color.r);
@@ -184,9 +185,10 @@ uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
     // DD(color.g);
     // DDD("B: ");
     // DD(color.b);
-    prev_color = color;
+    prev_colorR = color;
     worker = 0;
   }
+  led.fill(color);
 
   switch (worker)
   {
@@ -195,7 +197,6 @@ uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
     worker = 1;
     i = 0;
     // TT1 = millis() - 1;
-    led.fill(color);
     led.setBrightness(Br_min);
     BR = Br_min;
     if (Show)
@@ -233,7 +234,6 @@ uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   }
   case 2: // полная яркость
   {
-    DD(2);
     if (T2)
     {
       if ((uint16_t)(millis() - TT2) >= T2)
@@ -253,7 +253,6 @@ uint8_t blinkR(R_INIT &led, mData color, uint8_t N, uint16_t T1, uint16_t T2, ui
   }
   case 3: // fade-out
   {
-    DD(3, 1000);
     uint8_t dekay3 = dekay;
     uint16_t BT = (Br_max - Br_min) / T3 * dekay3;
     if (BT == 0)
@@ -330,7 +329,7 @@ uint8_t blinkSync(L_INIT &l_led, R_INIT &r_led, const mData &color, uint8_t N, u
   {
     worker = workerSet;
   }
-  if (prev_color != color)
+  if (prev_colorS != color)
   {
     // DDD("R: ");
     // DD(color.r);
@@ -338,7 +337,7 @@ uint8_t blinkSync(L_INIT &l_led, R_INIT &r_led, const mData &color, uint8_t N, u
     // DD(color.g);
     // DDD("B: ");
     // DD(color.b);
-    prev_color = color;
+    prev_colorS = color;
     worker = 0;
   }
 
