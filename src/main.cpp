@@ -89,7 +89,7 @@ uint32_t patternChangeTimer = 0;
 
 bool initSender = 0, initSent = 0;
 
-bool syncRequired = 0;
+uint8_t syncRequired = 0;
 uint32_t synchronized = 0;
 void setup()
 {
@@ -260,7 +260,7 @@ void loop()
           }
           initSent = 1;
           initSender = 0;
-          syncRequired = 1;
+          syncRequired = 3;
           DD_LED((device_next));
         }
       }
@@ -314,8 +314,13 @@ void loop()
               pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
             else
               pattern = random(2147483647) % 2;
-            while (blinkSync(l_led, r_led, mPurple, 1, 200, 200, 200, 0, 0, 255, DEKAY, 0))
+            DD("CHANGE_PATTERN ->");
+            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+            while (blinkSync(l_led, r_led, mPurple, 1, 200, 1000, 200, 0, 0, 255, DEKAY, 0))
             {
+              SendData(3);
               SHOW_NUM(r_led, l_led, pattern_number, mPurple);
             }
             DDD("Pattern changed: ");
@@ -324,10 +329,6 @@ void loop()
             DD(pattern_number);
             patternChangeTimer = millis();
           }
-          DD("CHANGE_PATTERN ->");
-          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          // SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
         }
       }
       break;
@@ -356,15 +357,15 @@ void loop()
         DD("SHOW_PATTERN_GLOBAL <-");
         if (received.address != device_id || received.address == CARMP3::address)
           TMR16(SHOW_PATTERN_TIMER, {
-            while (!SendData())
-            {
-            }
             DD("SHOW_PATTERN_GLOBAL ->");
             SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-            SendData();
+            // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+            // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+
             while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
             {
               blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+              SendData(3);
             }
           });
       }
@@ -413,7 +414,7 @@ void loop()
         DD("SYNC_COMMAND ->");
         SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
         SendData();
-        syncRequired = 0;
+        syncRequired--;
       }
       // DD("Send Sync Command:");
     }

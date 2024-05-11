@@ -5,7 +5,7 @@
 #include <MemoryFree.h>
 
 #define SEND_DELAY 800
-#define SEND_DELAY_2 SEND_DELAY*2
+#define SEND_DELAY_2 SEND_DELAY * 2
 
 #pragma pack(push, 1)
 
@@ -68,7 +68,7 @@ uint16_t SendTimer = 0;
  * @brief Function to send data using the IR protocol.
  * @return true when data can be sent immediately, false otherwise
  */
-bool SendData()
+bool SendData(uint8_t k = 1)
 {
     if (uint16_t(millis() - SendTimer) > SEND_DELAY)
     {
@@ -76,13 +76,13 @@ bool SendData()
         {
             return true;
         }
+        SendTimer = millis();
         DDD("Sending: {");
         DDD(SendDataQueue.front().address);
         DDD(",");
         DDD(SendDataQueue.front().command);
         DD("}");
-        SendTimer = millis();
-        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, 1);
+        IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, k);
         SendDataQueue.pop_front();
     }
     return false;
