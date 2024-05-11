@@ -593,6 +593,7 @@ void loop()
       workerMain = 0;
       minimal = 0;
       maximal = 0;
+      // randomizer->~Randomizer();
       delete randomizer;
     }
   }
