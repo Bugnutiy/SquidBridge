@@ -4,6 +4,7 @@
 #include "TransmitterFunc.h"
 #include "RemoteCommands.h"
 #include "My_Debug.h"
+#include <QList.h>
 
 class Randomizer
 {
