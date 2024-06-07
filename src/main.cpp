@@ -206,6 +206,7 @@ void loop()
   {
   case 0:
   {
+    DD("LOL",1000);
     if (IrReceiver.decode())
     {
       received = IrData{IrReceiver.decodedIRData.address, uint8_t(IrReceiver.decodedIRData.command)};
