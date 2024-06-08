@@ -83,11 +83,13 @@ bool pattern = 0;
 IrData received;
 uint8_t device_id = 255, device_next = 1;
 
-uint8_t workerMain = 0;
+// uint8_t workerMain = 0;
 uint8_t pattern_number = 0;
 uint32_t patternChangeTimer = 0;
 
 bool initSender = 0, initSent = 0;
+
+Randomizer randomizer;
 
 uint8_t syncRequired = 0;
 uint32_t synchronized = 0;
@@ -188,7 +190,7 @@ void setup()
   DDD("Devices count: ");
   DD(device_next);
   DD_LED(device_id);
-  workerMain = 0;
+  // workerMain = 0;
   if (device_id <= 10)
     pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
   else
@@ -202,407 +204,505 @@ void setup()
 
 void loop()
 {
-  switch (workerMain)
+  // switch (workerMain)
+  // {
+  // case 0:
+  // {
+  DD("LOL", 1000);
+  int8_t digit = -1;
+  bool btn_play = 0, btn_next = 0, btn_prev = 0, btn_100 = 0;
+  if (IrReceiver.decode())
   {
-  case 0:
-  {
-    DD("LOL",1000);
-    if (IrReceiver.decode())
+    received = IrData{IrReceiver.decodedIRData.address, uint8_t(IrReceiver.decodedIRData.command)};
+    if (received.address == device_id || received.command == 0)
     {
-      received = IrData{IrReceiver.decodedIRData.address, uint8_t(IrReceiver.decodedIRData.command)};
-      if (received.address == device_id || received.command == 0)
-      {
-        goto stop1;
-      }
-      // if (received.address < device_id)
-      SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id));
-      // else
-      // SendTimer = uint16_t(millis() + SEND_DELAY - ((SEND_DELAY / 20) * ((received.address - device_id) * 2 + 1)));
-
-      DDD("{");
-      DDD(received.address);
-      DDD(", ");
-      DDD(received.command);
-      DD("}");
-
-      switch (received.command)
-      {
-      case STD_COMMANDS::INIT_COMMAND:
-      {
-        if (received.address == uint8_t(device_id - 1))
-        {
-          SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-          // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-          // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        }
-      }
-      break;
-
-      case STD_COMMANDS::INIT_REQUEST:
-      {
-        if (received.address != device_id)
-        {
-          DD("INIT_REQUEST <-");
-          // SendTimer = uint16_t(millis() - SEND_DELAY + (SEND_DELAY / 20));
-          if (!initSent)
-            initSender = 1;
-        }
-      }
-      break;
-
-      case STD_COMMANDS::INIT_ANSWER:
-      {
-        if (received.address == uint8_t(device_id + 1))
-        {
-          DD("INIT_ANSWER <-");
-          if (!initSent)
-          {
-            device_next++;
-          }
-          initSent = 1;
-          initSender = 0;
-          syncRequired = 3;
-          DD_LED((device_next));
-        }
-      }
-      break;
-
-        // case STD_COMMANDS::SYNC_REQUEST:
-        // {
-        //   if (received.address == uint8_t(device_id + 1))
-        //   {
-        //     DD("SYNC_REQUEST <-");
-        //     syncRequired = 1;
-        //   }
-        // }
-        // break;
-
-      case STD_COMMANDS::SYNC_COMMAND:
-      {
-        DD("SYNC_COMMAND <-");
-        if (received.address == uint16_t(device_id) - 1)
-        {
-          TMR16(1000, {
-            synchronized = millis() - WAWE_FULL / 2;
-            if (device_id != device_next)
-              syncRequired = 1;
-          });
-        }
-      }
-      break;
-
-      case CARMP3::btn_CH_minus: // Change pattern
-      {
-        if (received.address == CARMP3::address)
-        {
-          if (millis() - patternChangeTimer <= PATTERN_CHANGE_TIME)
-          {
-            break;
-          }
-        }
-        else
-          break;
-      }
-      case STD_COMMANDS::CHANGE_PATTERN:
-      {
-        DD("CHANGE_PATTERN <-");
-        if (received.address < device_id)
-        {
-          if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
-          {
-            pattern_number++;
-            if (pattern_number < PATTERNS_COUNT && device_id <= 10)
-              pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
-            else
-              pattern = random(2147483647) % 2;
-            DD("CHANGE_PATTERN ->");
-            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-            SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-            while (blinkSync(l_led, r_led, mPurple, 1, 200, 1000, 200, 0, 0, 255, DEKAY, 0))
-            {
-              SendData(3);
-              SHOW_NUM(r_led, l_led, pattern_number, mPurple);
-            }
-            DDD("Pattern changed: ");
-            DD(pattern);
-            DDD("Pattern number:");
-            DD(pattern_number);
-            patternChangeTimer = millis();
-          }
-        }
-      }
-      break;
-
-      case CARMP3::btn_CH: // Show pattern locally
-      {
-        DD("SHOW_PATTERN_LOCAL <-");
-        if (received.address == CARMP3::address)
-        {
-          while (blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
-          {
-            DD("SHOW_PATTERN_", 1000);
-            blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
-          }
-        }
-      }
-      break;
-
-      case CARMP3::btn_CH_plus: // Show pattern global
-      {
-        if (received.address != CARMP3::address)
-          break;
-      }
-      case STD_COMMANDS::SHOW_PATTERN:
-      {
-        DD("SHOW_PATTERN_GLOBAL <-");
-        if (received.address != device_id || received.address == CARMP3::address)
-          TMR16(SHOW_PATTERN_TIMER, {
-            DD("SHOW_PATTERN_GLOBAL ->");
-            SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-            // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-            // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-
-            while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
-            {
-              blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
-              SendData(3);
-            }
-          });
-      }
-      break;
-      case CARMP3::btn_PLAY:
-      {
-        if (received.address == CARMP3::address && device_id == device_next)
-        {
-          workerMain = 1;
-        }
-      }
-      break;
-      default:
-        break;
-      }
-    stop1:
-      IrReceiver.resume();
+      goto stop1;
     }
-    if (initSender)
-    {
-      // TMR16(SEND_DELAY, {
-      if (SendData())
-      {
-        DD("INIT_COMMAND ->");
-        SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
-        SendData();
-      }
-      // });
-    }
+    // if (received.address < device_id)
+    SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id));
+    // else
+    // SendTimer = uint16_t(millis() + SEND_DELAY - ((SEND_DELAY / 20) * ((received.address - device_id) * 2 + 1)));
 
-    // if (!synchronized && device_id > 1)
-    // {
-    //   TMR16(, {
-    //     if (SendData())
-    //     {
-    //       DD("SYNC_REQUEST ->");
-    //       SendDataAdd(device_id, STD_COMMANDS::SYNC_REQUEST);
-    //     }
-    //   });
-    // }
+    DDD("{");
+    DDD(received.address);
+    DDD(", ");
+    DDD(received.command);
+    DD("}");
 
-    if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, 1) == WAWE_IN + WAWE_FULL / 2)
+    switch (received.command)
     {
-      if (syncRequired && synchronized && SendData())
+    case STD_COMMANDS::INIT_COMMAND:
+    {
+      if (received.address == uint8_t(device_id - 1))
       {
-        DD("SYNC_COMMAND ->");
-        SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
-        SendData();
-        syncRequired--;
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
       }
-      // DD("Send Sync Command:");
     }
-    SendData();
-    if (device_id == 1 && device_id != device_next)
-    {
-      TMR16(SYNC_TIMER, { syncRequired = 1; });
-    }
-    if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
-    {
-      l_vib = 0;
-      timer_l_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
-    }
-    if ((timer_type)(millis() - timer_r_vibr) >= timer_vibro_reset)
-    {
-      r_vib = 0;
-      timer_r_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
-    }
+    break;
 
-    if (l_vib > VIBRATOR_LEFT_SENS)
+    case STD_COMMANDS::INIT_REQUEST:
     {
-      while (blinkL(l_led, pattern ? mRed : mLime, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+      if (received.address != device_id)
       {
+        DD("INIT_REQUEST <-");
+        // SendTimer = uint16_t(millis() - SEND_DELAY + (SEND_DELAY / 20));
+        if (!initSent)
+          initSender = 1;
       }
-      // if (device_id > 1)
-      //   synchronized = 0;
-      r_vib = 0;
     }
-    if (r_vib > VIBRATOR_RIGHT_SENS)
+    break;
+
+    case STD_COMMANDS::INIT_ANSWER:
     {
-      while (blinkR(r_led, pattern ? mLime : mRed, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+      if (received.address == uint8_t(device_id + 1))
       {
+        DD("INIT_ANSWER <-");
+        if (!initSent)
+        {
+          device_next++;
+        }
+        initSent = 1;
+        initSender = 0;
+        syncRequired = 3;
+        DD_LED((device_next));
       }
-      // if (device_id > 1)
-      //   synchronized = 0;
-      l_vib = 0;
     }
-  }
-  break;
-  case 1:
-  {
-    static uint8_t minimal = 0, maximal = 0;
-    static uint8_t mode = 0;
-    while (mode == 0)
+    break;
+
+    case STD_COMMANDS::SYNC_COMMAND:
     {
-      if (!minimal)
+      DD("SYNC_COMMAND <-");
+      if (received.address == uint16_t(device_id) - 1)
       {
         TMR16(1000, {
-          static bool f1 = 0;
-          f1 = !f1;
-          r_led.fill(mBlack);
-          l_led.fill(mBlack);
-          r_led.show();
-          l_led.show();
-          r_led.fill(0, 2, f1 ? mRed : mBlack);
-          l_led.fill(6, 8, f1 ? mRed : mBlack);
-          r_led.show();
-          l_led.show();
-          r_led.fill(0, 2, f1 ? mRed : mBlack);
-          l_led.fill(6, 8, f1 ? mRed : mBlack);
-          r_led.show();
-          l_led.show();
+          synchronized = millis() - WAWE_FULL / 2;
+          if (device_id != device_next)
+            syncRequired = 1;
         });
+      }
+    }
+    break;
+
+    case CARMP3::btn_CH_minus: // Change pattern
+    {
+      if (received.address == CARMP3::address)
+      {
+        if (millis() - patternChangeTimer <= PATTERN_CHANGE_TIME)
+        {
+          break;
+        }
+      }
+      else
+        break;
+    }
+    case STD_COMMANDS::CHANGE_PATTERN:
+    {
+      DD("CHANGE_PATTERN <-");
+      if (received.address < device_id)
+      {
+        if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+        {
+          pattern_number++;
+          if (pattern_number < PATTERNS_COUNT && device_id <= 10)
+            pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+          else
+            pattern = random(2147483647) % 2;
+          DD("CHANGE_PATTERN ->");
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
+          while (blinkSync(l_led, r_led, mPurple, 1, 200, 1000, 200, 0, 0, 255, DEKAY, 0))
+          {
+            SendData(3);
+            SHOW_NUM(r_led, l_led, pattern_number, mPurple);
+          }
+          DDD("Pattern changed: ");
+          DD(pattern);
+          DDD("Pattern number:");
+          DD(pattern_number);
+          patternChangeTimer = millis();
+        }
+      }
+    }
+    break;
+
+    case CARMP3::btn_CH: // Show pattern locally
+    {
+      DD("SHOW_PATTERN_LOCAL <-");
+      if (received.address == CARMP3::address)
+      {
+        while (blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
+        {
+          DD("SHOW_PATTERN_", 1000);
+          blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+        }
+      }
+    }
+    break;
+
+    case CARMP3::btn_CH_plus: // Show pattern global
+    {
+      if (received.address != CARMP3::address)
+        break;
+    }
+    case STD_COMMANDS::SHOW_PATTERN:
+    {
+      DD("SHOW_PATTERN_GLOBAL <-");
+      if (received.address != device_id || received.address == CARMP3::address)
+        TMR16(SHOW_PATTERN_TIMER, {
+          DD("SHOW_PATTERN_GLOBAL ->");
+          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+          // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+          // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+
+          while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
+          {
+            blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
+            SendData(3);
+          }
+        });
+    }
+    break;
+
+    case CARMP3::btn_PLAY:
+    {
+      if (received.address == CARMP3::address)
+        btn_play = true;
+    }
+    break;
+
+    case CARMP3::btn_PREV:
+    {
+      if (received.address == CARMP3::address)
+        btn_prev = true;
+    }
+    break;
+
+    case CARMP3::btn_NEXT:
+    {
+      if (received.address == CARMP3::address)
+        btn_next = true;
+    }
+    break;
+
+    case CARMP3::btn_100:
+    {
+      if (received.address == CARMP3::address)
+      {
+        btn_100 = true;
+      }
+    }
+    break;
+
+    default:
+      if (received.address == CARMP3::address)
+        digit = CARMP3_NUM(received.command);
+      break;
+    }
+  stop1:
+    IrReceiver.resume();
+  }
+  if (initSender)
+  {
+    // TMR16(SEND_DELAY, {
+    if (SendData())
+    {
+      DD("INIT_COMMAND ->");
+      SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
+      SendData();
+    }
+    // });
+  }
+
+  if (WAWE_SYNC(r_led, l_led, mAqua, WAWE_IN, WAWE_FULL, WAWE_OUT, WAWE_MIN, WAWE_MIN_BRIGHT, WAWE_MAX_BRIGHT, synchronized, 0) == WAWE_IN + WAWE_FULL / 2)
+  {
+    if (syncRequired && synchronized && SendData())
+    {
+      DD("SYNC_COMMAND ->");
+      SendDataAdd(device_id, STD_COMMANDS::SYNC_COMMAND);
+      SendData();
+      syncRequired--;
+    }
+    // DD("Send Sync Command:");
+  }
+  SendData();
+  if (device_id == 1 && device_id != device_next)
+  {
+    TMR16(SYNC_TIMER, { syncRequired = 1; });
+  }
+  if ((timer_type)(millis() - timer_l_vibr) >= timer_vibro_reset)
+  {
+    l_vib = 0;
+    timer_l_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
+  }
+  if ((timer_type)(millis() - timer_r_vibr) >= timer_vibro_reset)
+  {
+    r_vib = 0;
+    timer_r_vibr = millis(); // Таймер сбрасывается ещё в одном месте!
+  }
+
+  if (l_vib > VIBRATOR_LEFT_SENS)
+  {
+    while (blinkL(l_led, pattern ? mRed : mLime, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+    {
+    }
+    // if (device_id > 1)
+    //   synchronized = 0;
+    r_vib = 0;
+  }
+  if (r_vib > VIBRATOR_RIGHT_SENS)
+  {
+    while (blinkR(r_led, pattern ? mLime : mRed, BLINK_N, BLINK_IN, BLINK_FULL, BLINK_OUT, BLINK_MIN, BLINK_MIN_BRIGHT, BLINK_MAX_BRIGHT, DEKAY, 1))
+    {
+    }
+    // if (device_id > 1)
+    //   synchronized = 0;
+    l_vib = 0;
+  }
+  // вызов ребят
+  if (device_id == device_next)
+  {
+    static uint8_t minimal = 0, maximal = 0;
+    static uint8_t mode = 3;
+    if (btn_100)
+      TMR16(100, {
+        mode = 3;
+      });
+    if (mode == 0 || mode == 1)
+    {
+      if ((!minimal && mode == 0) || (!maximal && mode == 1))
+      {
+        static bool f1 = 0;
+        TMR16(1000, {
+          f1 = !f1;
+        });
+        if (f1)
+        {
+          r_led.set(1, mRed);
+          l_led.set(7, mRed);
+        }
       }
       else
       {
         l_led.setBrightness(BRIGHTNESS_MAX);
         r_led.setBrightness(BRIGHTNESS_MAX);
-        SHOW_NUM(r_led, l_led, minimal, mRed);
+        if (mode == 0)
+          SHOW_NUM(r_led, l_led, minimal, mRed);
+        if (mode == 1)
+          SHOW_NUM(r_led, l_led, maximal, mRed);
       }
-      if (IrReceiver.decode())
+      if (digit >= 0 && digit < 10)
       {
-        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-        if (received.address == CARMP3::address)
-        {
-          if (received.command == CARMP3::btn_PLAY && minimal > 0)
+        TMR16(100, {
+          if (mode == 0)
           {
-            mode = 1;
+            minimal = (uint16_t(minimal) * 10) % 100 + digit;
           }
-          else
+          if (mode == 1)
           {
-            TMR16(100, {
-              uint8_t digit = CARMP3_NUM(received.command);
-              if (digit < 10)
-              {
-                minimal = (uint16_t(minimal) * 10) % 100 + digit;
-              }
-            });
+            maximal = (uint16_t(maximal) * 10) % 100 + digit;
           }
-        }
-        IrReceiver.resume();
-      }
-    }
-    while (mode == 1)
-    {
-      if (!maximal)
-      {
-        TMR16(500, {
-          static bool f1 = 0;
-          f1 = !f1;
-          r_led.fill(mBlack);
-          l_led.fill(mBlack);
-          r_led.show();
-          l_led.show();
-          r_led.fill(0, 2, f1 ? mRed : mBlack);
-          l_led.fill(6, 8, f1 ? mRed : mBlack);
-          r_led.show();
-          l_led.show();
-          r_led.fill(0, 2, f1 ? mRed : mBlack);
-          l_led.fill(6, 8, f1 ? mRed : mBlack);
-          r_led.show();
-          l_led.show();
         });
       }
-      else
+      if (btn_play)
       {
-        SHOW_NUM(r_led, l_led, maximal, mRed);
-      }
-      if (IrReceiver.decode())
-      {
-        received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-        if (received.address == CARMP3::address)
-        {
-          if (received.command == CARMP3::btn_PLAY && maximal > 0)
+        TMR16(100, {
+          if ((mode == 0 && minimal) || (mode == 1 && maximal))
+            ++mode;
+          if (mode == 2)
           {
-            mode = 2;
+            randomizer.init(minimal, maximal);
           }
-          else
-          {
-            TMR16(100, {
-              uint8_t digit = CARMP3_NUM(received.command);
-              if (digit < 10)
-              {
-                maximal = (uint16_t(maximal) * 10) % 100 + digit;
-              }
-            });
-          }
-        }
-        IrReceiver.resume();
+        });
       }
     }
-    while (mode == 2)
+    if (mode == 2)
     {
-      Randomizer *randomizer = new Randomizer;
-      if (randomizer->init(minimal, maximal))
+      static uint8_t i = 0;
+      if (i < randomizer.PlayersList.size())
       {
-        uint8_t i = 0;
-        while (i < randomizer->PlayersList.size())
+        SHOW_NUM(r_led, l_led, randomizer.PlayersList[i], mPurple, mBlack, 0, 0);
+        if (btn_next || btn_prev)
         {
-          TMR8(200, { SHOW_NUM(r_led, l_led, randomizer->PlayersList[i], mRed); });
-
-          if (IrReceiver.decode())
-          {
-            received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
-
-            TMR16(100, {
-              switch (received.command)
-              {
-              case CARMP3::btn_NEXT:
-                i++;
-                break;
-              case CARMP3::btn_PREV:
-                i--;
-              default:
-                break;
-              }
-            });
-            IrReceiver.resume();
-          }
-          if (i == 255)
-            i = 0;
+          TMR16(100, {
+            if (btn_next)
+            {
+              ++i;
+              if (i >= randomizer.PlayersList.size())
+                i = 0;
+            }
+            else if (btn_prev)
+            {
+              --i;
+              if (i >= randomizer.PlayersList.size())
+                // i = randomizer.PlayersList.size() - 1;
+                mode++;
+            }
+          });
         }
       }
-
-      mode = 0;
-      workerMain = 0;
-      minimal = 0;
-      maximal = 0;
-      // randomizer->~Randomizer();
-      delete randomizer;
+    }
+    if (mode == 3)
+    {
+      if (btn_play)
+      {
+        mode = 0;
+      }
     }
   }
-  break;
-  default:
-    workerMain = 0;
-    break;
-  }
+
+  l_led.show();
+  r_led.show();
+  // }
+  // break;
+  // case 1:
+  // {
+  //   static uint8_t minimal = 0, maximal = 0;
+  //   static uint8_t mode = 0;
+  //   while (mode == 0)
+  //   {
+  //     if (!minimal)
+  //     {
+  //       TMR16(1000, {
+  //         static bool f1 = 0;
+  //         f1 = !f1;
+  //         r_led.fill(mBlack);
+  //         l_led.fill(mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //         r_led.fill(0, 2, f1 ? mRed : mBlack);
+  //         l_led.fill(6, 8, f1 ? mRed : mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //         r_led.fill(0, 2, f1 ? mRed : mBlack);
+  //         l_led.fill(6, 8, f1 ? mRed : mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //       });
+  //     }
+  //     else
+  //     {
+  //       l_led.setBrightness(BRIGHTNESS_MAX);
+  //       r_led.setBrightness(BRIGHTNESS_MAX);
+  //       SHOW_NUM(r_led, l_led, minimal, mRed);
+  //     }
+  //     if (IrReceiver.decode())
+  //     {
+  //       received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+  //       if (received.address == CARMP3::address)
+  //       {
+  //         if (received.command == CARMP3::btn_PLAY && minimal > 0)
+  //         {
+  //           mode = 1;
+  //         }
+  //         else
+  //         {
+  //           TMR16(100, {
+  //             uint8_t digit = CARMP3_NUM(received.command);
+  //             if (digit < 10)
+  //             {
+  //               minimal = (uint16_t(minimal) * 10) % 100 + digit;
+  //             }
+  //           });
+  //         }
+  //       }
+  //       IrReceiver.resume();
+  //     }
+  //   }
+  //   while (mode == 1)
+  //   {
+  //     if (!maximal)
+  //     {
+  //       TMR16(500, {
+  //         static bool f1 = 0;
+  //         f1 = !f1;
+  //         r_led.fill(mBlack);
+  //         l_led.fill(mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //         r_led.fill(0, 2, f1 ? mRed : mBlack);
+  //         l_led.fill(6, 8, f1 ? mRed : mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //         r_led.fill(0, 2, f1 ? mRed : mBlack);
+  //         l_led.fill(6, 8, f1 ? mRed : mBlack);
+  //         r_led.show();
+  //         l_led.show();
+  //       });
+  //     }
+  //     else
+  //     {
+  //       SHOW_NUM(r_led, l_led, maximal, mRed);
+  //     }
+  //     if (IrReceiver.decode())
+  //     {
+  //       received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+  //       if (received.address == CARMP3::address)
+  //       {
+  //         if (received.command == CARMP3::btn_PLAY && maximal > 0)
+  //         {
+  //           mode = 2;
+  //         }
+  //         else
+  //         {
+  //           TMR16(100, {
+  //             uint8_t digit = CARMP3_NUM(received.command);
+  //             if (digit < 10)
+  //             {
+  //               maximal = (uint16_t(maximal) * 10) % 100 + digit;
+  //             }
+  //           });
+  //         }
+  //       }
+  //       IrReceiver.resume();
+  //     }
+  //   }
+  //   while (mode == 2)
+  //   {
+  //     if (randomizer.init(minimal, maximal))
+  //     {
+  //       uint8_t i = 0;
+  //       while (i < randomizer.PlayersList.size())
+  //       {
+  //         TMR8(200, { SHOW_NUM(r_led, l_led, randomizer.PlayersList[i], mRed); });
+  //
+  //         if (IrReceiver.decode())
+  //         {
+  //           received = IrData{IrReceiver.decodedIRData.address, (uint8_t)IrReceiver.decodedIRData.command};
+  //
+  //           TMR16(100, {
+  //             switch (received.command)
+  //             {
+  //             case CARMP3::btn_NEXT:
+  //               i++;
+  //               break;
+  //             case CARMP3::btn_PREV:
+  //               i--;
+  //             default:
+  //               break;
+  //             }
+  //           });
+  //           IrReceiver.resume();
+  //         }
+  //         if (i == 255)
+  //           i = 0;
+  //       }
+  //     }
+  //
+  //     mode = 0;
+  //     workerMain = 0;
+  //     minimal = 0;
+  //     maximal = 0;
+  //     // randomizer.~Randomizer();
+  //   }
+  // }
+  // break;
+  // default:
+  //   workerMain = 0;
+  //   break;
+  // }
 }
 
 // put function definitions here:

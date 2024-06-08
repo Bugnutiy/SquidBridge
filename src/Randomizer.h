@@ -24,7 +24,8 @@ Randomizer::Randomizer()
 bool Randomizer::init(uint8_t &minimal, uint8_t &maximal)
 {
     randomSeed(analogRead(A0));
-    for (uint8_t i = 0; i < maximal - minimal+1; i++)
+    PlayersList.clear();
+    for (uint8_t i = 0; i < maximal - minimal + 1; i++)
     {
         bool flag = true;
         uint8_t tmp;
@@ -50,5 +51,5 @@ bool Randomizer::init(uint8_t &minimal, uint8_t &maximal)
 Randomizer::~Randomizer()
 {
     PlayersList.clear();
-    PlayersList.~QList();
+    // PlayersList.~QList();
 }
