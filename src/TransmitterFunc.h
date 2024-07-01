@@ -4,8 +4,8 @@
 #include <IRremote.hpp>
 #include <MemoryFree.h>
 
-#define SEND_DELAY 800
-#define SEND_DELAY_2 SEND_DELAY * 2
+#define SEND_DELAY 40
+// #define SEND_DELAY_2 SEND_DELAY / 2
 
 #pragma pack(push, 1)
 
@@ -32,6 +32,8 @@ struct IrData
      */
     uint8_t command;
 
+    uint8_t k;
+
     /**
      * @brief Compare two IrData objects for equality.
      *
@@ -51,16 +53,16 @@ struct IrData
 
 QList<IrData> SendDataQueue;
 
-void SendDataAdd(uint16_t address, uint8_t command)
+void SendDataAdd(uint16_t address, uint8_t command, uint8_t k = 1)
 {
     if (static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue))
-        SendDataQueue.push_back(IrData{address, command});
+        SendDataQueue.push_back(IrData{address, command, k});
 }
 
-void SendDataAddFront(uint16_t address, uint8_t command)
+void SendDataAddFront(uint16_t address, uint8_t command, uint8_t k = 1)
 {
     if (static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue))
-        SendDataQueue.push_front(IrData{address, command});
+        SendDataQueue.push_front(IrData{address, command, k});
 }
 
 uint16_t SendTimer = 0;
@@ -68,7 +70,7 @@ uint16_t SendTimer = 0;
  * @brief Function to send data using the IR protocol.
  * @return true when data can be sent immediately, false otherwise
  */
-bool SendData(uint8_t k = 1)
+bool SendData(uint8_t k = 0)
 {
     if (uint16_t(millis() - SendTimer) > SEND_DELAY)
     {
@@ -76,12 +78,17 @@ bool SendData(uint8_t k = 1)
         {
             return true;
         }
-        SendTimer = millis();
         DDD("Sending: {");
         DDD(SendDataQueue.front().address);
         DDD(",");
         DDD(SendDataQueue.front().command);
         DD("}");
+        if (!k)
+        {
+            k = SendDataQueue.front().k;
+        }
+        SendTimer = millis() + SEND_DELAY * (k - 1);
+
         IrSender.sendNEC(SendDataQueue.front().address, SendDataQueue.front().command, k);
         SendDataQueue.pop_front();
     }

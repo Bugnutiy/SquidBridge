@@ -14,6 +14,7 @@ public:
     QList<uint8_t> PlayersList;
     Randomizer();
     bool init(uint8_t &minimal, uint8_t &maximal);
+    void clear();
     ~Randomizer();
 };
 
@@ -48,8 +49,12 @@ bool Randomizer::init(uint8_t &minimal, uint8_t &maximal)
     DD(PlayersList.size());
     return true;
 }
+void Randomizer::clear()
+{
+    PlayersList.clear();
+}
 Randomizer::~Randomizer()
 {
     PlayersList.clear();
-    // PlayersList.~QList();
+    PlayersList.~QList();
 }

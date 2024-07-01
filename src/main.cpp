@@ -62,6 +62,7 @@
 #include "RemoteCommands.h"
 #include <IRremote.hpp>
 #include "Patterns.h"
+#include <EEManager.h>
 
 microLED<NUMLEDS, LEFT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> l_led;
 microLED<NUMLEDS, RIGHT_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> r_led;
@@ -103,15 +104,14 @@ void setup()
   r_led.setBrightness(BRIGHTNESS_MAX);
   unsigned long seed = 0;
 
-  seed = analogRead(A0);
+  // seed = analogRead(A0);
 
-  randomSeed(seed);
-  pattern = random(2147483648) % 2;
+  // randomSeed(seed);
+  // pattern = random(2147483648) % 2;
   pinMode(VIBRATOR_LEFT_PIN, INPUT_PULLUP);
   pinMode(VIBRATOR_RIGHT_PIN, INPUT_PULLUP);
   attachInterrupt(VIBRATOR_LEFT, left_vibr, CHANGE);
   attachInterrupt(VIBRATOR_RIGHT, right_vibr, CHANGE);
-  randomSeed(analogRead(A0));
   IrReceiver.begin(RECEIVER_PIN);
   IrSender.begin(SENDER_PIN);
   // DDD("Pattern: ");
@@ -119,8 +119,8 @@ void setup()
   // DDD("Seed: ");
   // DD(seed);
 
-  static bool flag = 1;
-  static uint16_t InintTimer = millis();
+  bool flag = 1;
+  uint16_t InintTimer = millis();
   DD("Waiting for initialization");
   while (flag)
   {
@@ -132,10 +132,10 @@ void setup()
       r_led.show();
       l_led.show();
     });
-    if (uint16_t(millis() - SendTimer) > SEND_DELAY)
+    if (uint16_t(millis()) - SendTimer > SEND_DELAY)
     {
-      SendTimer = millis();
-      IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
+      SendTimer = millis() + SEND_DELAY * 4;
+      IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 3);
     }
     if (IrReceiver.decode())
     {
@@ -157,9 +157,9 @@ void setup()
         flag = 0;
         device_id = received.address + 1;
         device_next = device_id;
-        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
         goto stop;
       }
       if (received.address == CARMP3::address)
@@ -191,6 +191,7 @@ void setup()
   DD(device_next);
   DD_LED(device_id);
   // workerMain = 0;
+  randomSeed(analogRead(A0));
   if (device_id <= 10)
     pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
   else
@@ -208,9 +209,8 @@ void loop()
   // {
   // case 0:
   // {
-  DD("LOL", 1000);
   int8_t digit = -1;
-  bool btn_play = 0, btn_next = 0, btn_prev = 0, btn_100 = 0;
+  bool btn_play = 0, btn_next = 0, btn_prev = 0, btn_100 = 0, btn_200 = 0;
   if (IrReceiver.decode())
   {
     received = IrData{IrReceiver.decodedIRData.address, uint8_t(IrReceiver.decodedIRData.command)};
@@ -218,10 +218,8 @@ void loop()
     {
       goto stop1;
     }
-    // if (received.address < device_id)
-    SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id));
-    // else
-    // SendTimer = uint16_t(millis() + SEND_DELAY - ((SEND_DELAY / 20) * ((received.address - device_id) * 2 + 1)));
+    // SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id));
+    SendTimer = uint16_t(millis()) + device_id;
 
     DDD("{");
     DDD(received.address);
@@ -235,9 +233,9 @@ void loop()
     {
       if (received.address == uint8_t(device_id - 1))
       {
-        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
-        // SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
+        SendDataAdd(device_id, STD_COMMANDS::INIT_ANSWER, 5);
       }
     }
     break;
@@ -247,7 +245,6 @@ void loop()
       if (received.address != device_id)
       {
         DD("INIT_REQUEST <-");
-        // SendTimer = uint16_t(millis() - SEND_DELAY + (SEND_DELAY / 20));
         if (!initSent)
           initSender = 1;
       }
@@ -279,7 +276,7 @@ void loop()
         TMR16(1000, {
           synchronized = millis() - WAWE_FULL / 2;
           if (device_id != device_next)
-            syncRequired = 1;
+            syncRequired = 3;
         });
       }
     }
@@ -300,31 +297,31 @@ void loop()
     case STD_COMMANDS::CHANGE_PATTERN:
     {
       DD("CHANGE_PATTERN <-");
-      if (received.address < device_id)
+      // if (received.address < device_id)
+      // {
+      if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
       {
-        if (millis() - patternChangeTimer > PATTERN_CHANGE_TIME)
+        pattern_number++;
+        if (pattern_number < PATTERNS_COUNT && device_id <= 10)
+          pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
+        else
+          pattern = random(2147483647) % 2;
+        DD("CHANGE_PATTERN ->");
+        SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN, 3);
+        SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN, 3);
+        SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN, 3);
+        while (blinkSync(l_led, r_led, mPurple, 1, 200, 1000, 200, 0, 0, 255, DEKAY, 0))
         {
-          pattern_number++;
-          if (pattern_number < PATTERNS_COUNT && device_id <= 10)
-            pattern = pread_8t(PATTERNS[pattern_number][device_id - 1]);
-          else
-            pattern = random(2147483647) % 2;
-          DD("CHANGE_PATTERN ->");
-          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          SendDataAdd(device_id, STD_COMMANDS::CHANGE_PATTERN);
-          while (blinkSync(l_led, r_led, mPurple, 1, 200, 1000, 200, 0, 0, 255, DEKAY, 0))
-          {
-            SendData(3);
-            SHOW_NUM(r_led, l_led, pattern_number, mPurple);
-          }
-          DDD("Pattern changed: ");
-          DD(pattern);
-          DDD("Pattern number:");
-          DD(pattern_number);
-          patternChangeTimer = millis();
+          SendData();
+          SHOW_NUM(r_led, l_led, pattern_number, mPurple);
         }
+        DDD("Pattern changed: ");
+        DD(pattern);
+        DDD("Pattern number:");
+        DD(pattern_number);
+        patternChangeTimer = millis();
       }
+      // }
     }
     break;
 
@@ -353,14 +350,15 @@ void loop()
       if (received.address != device_id || received.address == CARMP3::address)
         TMR16(SHOW_PATTERN_TIMER, {
           DD("SHOW_PATTERN_GLOBAL ->");
-          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-          // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
-          // SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN);
+          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN, 5);
+          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN, 5);
+          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN, 5);
+          SendDataAdd(device_id, STD_COMMANDS::SHOW_PATTERN, 5);
 
           while (blinkL(l_led, pattern ? mRed : mLime, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1))
           {
             blinkR(r_led, pattern ? mLime : mRed, SHOW_BLINK_N, SHOW_BLINK_IN, SHOW_BLINK_FULL, SHOW_BLINK_OUT, SHOW_BLINK_MIN, SHOW_BLINK_MIN_BRIGHT, SHOW_BLINK_MAX_BRIGHT, DEKAY, 1);
-            SendData(3);
+            SendData();
           }
         });
     }
@@ -395,7 +393,12 @@ void loop()
       }
     }
     break;
-
+    case CARMP3::btn_200:
+    {
+      if (received.address == CARMP3::address)
+        btn_200 = true;
+    }
+    break;
     default:
       if (received.address == CARMP3::address)
         digit = CARMP3_NUM(received.command);
@@ -410,7 +413,7 @@ void loop()
     if (SendData())
     {
       DD("INIT_COMMAND ->");
-      SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND);
+      SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND, 4);
       SendData();
     }
     // });
@@ -464,12 +467,19 @@ void loop()
   // вызов ребят
   if (device_id == device_next)
   {
+    static uint16_t btn_play_timer = 0;
     static uint8_t minimal = 0, maximal = 0;
     static uint8_t mode = 3;
     if (btn_100)
-      TMR16(100, {
-        mode = 3;
-      });
+      mode = 3;
+    if (btn_200)
+    {
+      minimal = 0;
+      maximal = 0;
+      mode = 3;
+      randomizer.clear();
+    }
+
     if (mode == 0 || mode == 1)
     {
       if ((!minimal && mode == 0) || (!maximal && mode == 1))
@@ -508,14 +518,18 @@ void loop()
       }
       if (btn_play)
       {
-        TMR16(100, {
-          if ((mode == 0 && minimal) || (mode == 1 && maximal))
-            ++mode;
-          if (mode == 2)
+        if ((uint16_t)(millis() - btn_play_timer) >= 300)
+        {
+          btn_play_timer = millis();
           {
-            randomizer.init(minimal, maximal);
+            if ((mode == 0 && minimal) || (mode == 1 && maximal))
+              ++mode;
+            if (mode == 2)
+            {
+              randomizer.init(minimal, maximal);
+            }
           }
-        });
+        }
       }
     }
     if (mode == 2)
@@ -523,7 +537,7 @@ void loop()
       static uint8_t i = 0;
       if (i < randomizer.PlayersList.size())
       {
-        SHOW_NUM(r_led, l_led, randomizer.PlayersList[i], mPurple, mBlack, 0, 0);
+        SHOW_NUM(r_led, l_led, randomizer.PlayersList[i], mPurple, mBlack, 0, 1);
         if (btn_next || btn_prev)
         {
           TMR16(100, {
@@ -531,14 +545,16 @@ void loop()
             {
               ++i;
               if (i >= randomizer.PlayersList.size())
+              {
                 i = 0;
+                mode++;
+              }
             }
             else if (btn_prev)
             {
               --i;
               if (i >= randomizer.PlayersList.size())
-                // i = randomizer.PlayersList.size() - 1;
-                mode++;
+                i = randomizer.PlayersList.size() - 1;
             }
           });
         }
@@ -548,6 +564,7 @@ void loop()
     {
       if (btn_play)
       {
+        btn_play_timer = millis();
         mode = 0;
       }
     }
