@@ -52,7 +52,7 @@
 #define timer_vibro_reset 100 // как часто сбрасывать счётчик вибрации
 
 #define PATTERN_CHANGE_TIME 20000
-#define INIT_TIME 10000
+#define INIT_TIME 15000
 
 #define COLOR_DEBTH 1
 
@@ -102,7 +102,7 @@ void setup()
 
   l_led.setBrightness(BRIGHTNESS_MAX);
   r_led.setBrightness(BRIGHTNESS_MAX);
-  unsigned long seed = 0;
+  // unsigned long seed = 0;
 
   // seed = analogRead(A0);
 
@@ -132,11 +132,20 @@ void setup()
       r_led.show();
       l_led.show();
     });
-    if (uint16_t(millis()) - SendTimer > SEND_DELAY)
+    if ((uint16_t)(millis() - SendTimer) > 500)
     {
-      SendTimer = millis() + SEND_DELAY * 4;
-      IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 3);
+      SendTimer = uint16_t(millis());
+      IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
     }
+
+    // static uint16_t tmr1000 = 0;
+    // if ((uint16_t)(millis() - tmr1000) >= 1000)
+    // {
+    //   tmr1000 = millis();
+    //   {
+    //     IrSender.sendNEC(device_id, STD_COMMANDS::INIT_REQUEST, 1);
+    //   }
+    // }
     if (IrReceiver.decode())
     {
       received = IrData{IrReceiver.decodedIRData.address, uint8_t(IrReceiver.decodedIRData.command)};
@@ -202,7 +211,7 @@ void setup()
     synchronized = 1;
   }
 }
-
+uint16_t temp_timer;
 void loop()
 {
   // switch (workerMain)
@@ -219,7 +228,9 @@ void loop()
       goto stop1;
     }
     // SendTimer = uint16_t(millis() - (SEND_DELAY / 10) * (10 - device_id));
-    SendTimer = uint16_t(millis()) + device_id;
+    temp_timer = uint16_t(millis()) - SEND_DELAY / 2;
+    if (temp_timer > SendTimer)
+      SendTimer = temp_timer;
 
     DDD("{");
     DDD(received.address);
@@ -413,7 +424,7 @@ void loop()
     if (SendData())
     {
       DD("INIT_COMMAND ->");
-      SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND, 4);
+      SendDataAdd(device_id, STD_COMMANDS::INIT_COMMAND, 1);
       SendData();
     }
     // });
@@ -471,7 +482,7 @@ void loop()
     static uint8_t minimal = 0, maximal = 0;
     static uint8_t mode = 3;
     if (btn_100)
-      mode = 3;
+      mode = 4;
     if (btn_200)
     {
       minimal = 0;
@@ -564,8 +575,22 @@ void loop()
     {
       if (btn_play)
       {
-        btn_play_timer = millis();
-        mode = 0;
+        if ((uint16_t)(millis() - btn_play_timer) >= 300)
+        {
+          btn_play_timer = millis();
+          mode = 0;
+        }
+      }
+    }
+    if (mode == 4)
+    {
+      if (btn_play)
+      {
+        if ((uint16_t)(millis() - btn_play_timer) >= 300)
+        {
+          btn_play_timer = millis();
+          mode = 2;
+        }
       }
     }
   }

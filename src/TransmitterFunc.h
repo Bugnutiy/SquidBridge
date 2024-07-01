@@ -4,7 +4,7 @@
 #include <IRremote.hpp>
 #include <MemoryFree.h>
 
-#define SEND_DELAY 40
+#define SEND_DELAY 500
 // #define SEND_DELAY_2 SEND_DELAY / 2
 
 #pragma pack(push, 1)
@@ -55,13 +55,13 @@ QList<IrData> SendDataQueue;
 
 void SendDataAdd(uint16_t address, uint8_t command, uint8_t k = 1)
 {
-    if (static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue))
+    if ((static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue)) && (SendDataQueue.size() <= 5))
         SendDataQueue.push_back(IrData{address, command, k});
 }
 
 void SendDataAddFront(uint16_t address, uint8_t command, uint8_t k = 1)
 {
-    if (static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue))
+    if ((static_cast<unsigned int>(freeMemory()) > sizeof(SendDataQueue)) && (SendDataQueue.size() <= 5))
         SendDataQueue.push_front(IrData{address, command, k});
 }
 
@@ -72,7 +72,7 @@ uint16_t SendTimer = 0;
  */
 bool SendData(uint8_t k = 0)
 {
-    if (uint16_t(millis() - SendTimer) > SEND_DELAY)
+    if (uint16_t(millis() - SendTimer) >= SEND_DELAY)
     {
         if (SendDataQueue.size() < 1)
         {
